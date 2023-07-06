@@ -1,15 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createEnvironment, createTypeToEval } from "./interpreter";
+import { evalType } from "./interpreter/eval";
 
 function App() {
-  const [envSourceCode, setEnvSourceCode] = useState("type A = 42;");
-  const [typeToEvalSourceCode, setTypeToEvalSourceCode] = useState("42");
+  const [envSourceCode, setEnvSourceCode] = useState("type A<X> = X;");
+  const [typeToEvalSourceCode, setTypeToEvalSourceCode] =
+    useState("A<'hello'>");
 
   const env = createEnvironment(envSourceCode);
   console.log("env", env);
 
-  const typToEval = createTypeToEval(typeToEvalSourceCode);
-  console.log("type to eval", typToEval);
+  const typeToEval = createTypeToEval(typeToEvalSourceCode);
+  console.log("type to eval", typeToEval);
+
+  const [evaled, setEvaled] = useState("");
+  useEffect(() => {
+    try {
+      if (typeToEval) {
+        setEvaled(
+          JSON.stringify(
+            evalType(createEnvironment(envSourceCode), typeToEval),
+            null,
+            2
+          )
+        );
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [envSourceCode, typeToEvalSourceCode]);
 
   return (
     <div>
@@ -28,7 +47,10 @@ function App() {
           setTypeToEvalSourceCode(e.target.value);
         }}
       />
-      <pre>{JSON.stringify(typToEval, null, 2)}</pre>
+      <pre>{JSON.stringify(typeToEval, null, 2)}</pre>
+
+      <h2>Evaled type</h2>
+      <pre>{evaled}</pre>
     </div>
   );
 }

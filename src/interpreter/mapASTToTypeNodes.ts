@@ -5,6 +5,8 @@ export const mapASTToTypeNodes = (node: ts.Node): TypeNode => {
   if (ts.isTypeAliasDeclaration(node)) {
     return {
       _type: "typeDeclaration",
+      typeParameters:
+        node.typeParameters?.map((param) => param.name.getText()) ?? [],
       text: node.getText().trim(),
       name: node.name.getText().trim(),
       type: mapASTToTypeNodes(node.type),
