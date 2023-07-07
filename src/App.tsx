@@ -3,9 +3,11 @@ import { createEnvironment, createTypeToEval } from "./interpreter";
 import { evalType } from "./interpreter/eval";
 
 function App() {
-  const [envSourceCode, setEnvSourceCode] = useState("type A<X> = X;");
+  const [envSourceCode, setEnvSourceCode] = useState(
+    "type First<T extends any[]> = T extends [infer Head, ...any] ? Head : never;"
+  );
   const [typeToEvalSourceCode, setTypeToEvalSourceCode] =
-    useState("A<'hello'>");
+    useState("First<[1, 2, 3]>");
 
   const env = createEnvironment(envSourceCode);
   console.log("env", env);
@@ -16,11 +18,16 @@ function App() {
   const [evaled, setEvaled] = useState("");
 
   useEffect(() => {
-    typeToEval.tap((ty) => {
-      createEnvironment(envSourceCode).tap((env) => {
-        evalType(env, ty).tap((evaledTy) => {
-          setEvaled(evaledTy.text);
-        });
+    typeToEval.map((ty) => {
+      createEnvironment(envSourceCode).map((env) => {
+        const evaledTy = evalType(env, ty);
+        if (evaledTy.isOk) {
+          setEvaled(evaledTy.unwrap().text);
+        } else {
+          setEvaled(
+            "ERROR: " + (evaledTy.variant === "err" ? evaledTy.error : "")
+          );
+        }
       });
     });
   }, [envSourceCode, typeToEvalSourceCode]);
@@ -28,6 +35,9 @@ function App() {
   return (
     <div>
       <h2>Environment</h2>
+      {env.isErr && "error" in env && env.error instanceof Error && (
+        <pre style={{ color: "red" }}>{env.error.message}</pre>
+      )}
       <textarea
         value={envSourceCode}
         onChange={(e) => {
@@ -42,11 +52,20 @@ function App() {
           setTypeToEvalSourceCode(e.target.value);
         }}
       />
-      {typeToEval.isSome && (
+      {typeToEval.isOk ? (
         <pre>{JSON.stringify(typeToEval.unwrap(), null, 2)}</pre>
+      ) : (
+        <pre style={{ color: "red" }}>
+          {JSON.stringify(typeToEval, null, 2)}
+        </pre>
       )}
 
       <h2>Evaled type</h2>
+      {typeToEval.isErr &&
+        "error" in typeToEval &&
+        typeToEval.error instanceof Error && (
+          <pre style={{ color: "red" }}>{typeToEval.error.message}</pre>
+        )}
       <pre>{evaled}</pre>
     </div>
   );

@@ -1,14 +1,14 @@
 # TODOs:
 
 - [x] primitive types
+- [x] use Result instead of Option for error info
 - [ ] object types
 - [ ] union types
 - [ ] intersection types
-- [ ] use Result instead of Option for error info
 - [ ] extends
-  - [ ] any, unknown, never
-  - [ ] common sets such as number, string
-  - [ ] literal types
+  - [x] any, unknown, never
+  - [x] common sets such as number, string
+  - [x] literal types
   - [ ] objects
 - [ ] type constraints
 - [ ] conditional types

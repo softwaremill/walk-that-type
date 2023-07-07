@@ -9,6 +9,7 @@ export type TypeNode = { text: string } & (
   | { _type: "stringLiteral"; value: string }
   | { _type: "booleanLiteral"; value: boolean }
   | { _type: "tuple"; elements: TypeNode[] }
+  | { _type: "array"; elementType: TypeNode }
   | { _type: "typeReference"; name: string; typeArguments: TypeNode[] }
   // most primitive types
   | { _type: "number" }
@@ -24,6 +25,21 @@ export type TypeNode = { text: string } & (
   // unions & intersections
   | { _type: "union"; members: TypeNode[] }
   | { _type: "intersection"; members: TypeNode[] }
+  | {
+      _type: "conditionalType";
+      checkType: TypeNode;
+      extendsType: TypeNode;
+      thenType: TypeNode;
+      elseType: TypeNode;
+    }
+  | {
+      _type: "infer";
+      name: string;
+    }
+  | {
+      _type: "rest";
+      type: TypeNode;
+    }
 );
 export type EvaluatedType = { isFullyEvaluated: boolean } & TypeNode;
 
@@ -127,6 +143,38 @@ const intersection = (members: TypeNode[]): TypeNode => ({
   text: members.map((m) => m.text).join(" & "),
 });
 
+const infer = (variableName: string): TypeNode => ({
+  _type: "infer",
+  name: variableName,
+  text: `infer ${variableName}`,
+});
+
+const rest = (type: TypeNode): TypeNode => ({
+  _type: "rest",
+  type,
+  text: `...${type.text}`,
+});
+
+const array = (elementType: TypeNode): TypeNode => ({
+  _type: "array",
+  elementType,
+  text: `${elementType.text}[]`,
+});
+
+const conditionalType = (
+  checkType: TypeNode,
+  extendsType: TypeNode,
+  thenType: TypeNode,
+  elseType: TypeNode
+): TypeNode => ({
+  _type: "conditionalType",
+  checkType,
+  extendsType,
+  thenType,
+  elseType,
+  text: `${checkType} extends ${extendsType} ? ${thenType} : ${elseType}`,
+});
+
 export const T = {
   typeDeclaration,
   numberLit,
@@ -145,4 +193,8 @@ export const T = {
   never: neverKeyword,
   union,
   intersection,
+  conditionalType,
+  infer,
+  rest,
+  array,
 };

@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { evalType } from "./eval";
 import { Environment, createEnvironment } from ".";
 
-const EMPTY_ENV: Environment = {};
+export const EMPTY_ENV: Environment = {};
 
 describe("eval", () => {
   test("Literal types", () => {

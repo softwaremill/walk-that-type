@@ -1,18 +1,26 @@
 import ts from "typescript";
 import { T, TypeNode } from "./TypeNode";
-import { Option, none, some } from "this-is-ok/option";
+import { Result, err, ok } from "this-is-ok/result";
 
 // TODO: add this to this-is-ok
-const sequence = <T>(opts: Option<T>[]): Option<T[]> => {
-  if (opts.some((el) => el.isNone)) {
-    return none;
+// const sequence = <T>(opts: Option<T>[]): Option<T[]> => {
+//   if (opts.ok((el) => el.isNone)) {
+//     return none;
+//   }
+
+//   return ok(opts.map((o) => o.unwrap()));
+// };
+
+const sequence = <T, E>(opts: Result<T, E>[]): Result<T[], E> => {
+  const error = opts.find((el) => el.isErr);
+  if (error) {
+    return err(error.unwrapErr()) as unknown as Result<T[], E>;
   }
 
-  return some(opts.map((o) => o.unwrap()));
+  return ok(opts.map((o) => o.unwrap()));
 };
 
-export const mapASTToTypeNodes = (node: ts.Node): Option<TypeNode> => {
-  console.log(node);
+export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
   if (ts.isTypeAliasDeclaration(node)) {
     return mapASTToTypeNodes(node.type).map(
       (type): TypeNode => ({
@@ -24,39 +32,58 @@ export const mapASTToTypeNodes = (node: ts.Node): Option<TypeNode> => {
         type,
       })
     );
+  } else if (ts.isConditionalTypeNode(node)) {
+    return mapASTToTypeNodes(node.checkType).do((checkType) => {
+      return ok(
+        T.conditionalType(
+          checkType,
+          mapASTToTypeNodes(node.extendsType).bind(),
+          mapASTToTypeNodes(node.trueType).bind(),
+          mapASTToTypeNodes(node.falseType).bind()
+        )
+      );
+    });
+  } else if (ts.isInferTypeNode(node)) {
+    return ok(T.infer(node.typeParameter.name.getText()));
+  } else if (ts.isArrayTypeNode(node)) {
+    return mapASTToTypeNodes(node.elementType).map(T.array);
+  } else if (ts.isRestTypeNode(node)) {
+    return mapASTToTypeNodes(node.type).map(T.rest);
   } else if (ts.isUnionTypeNode(node)) {
     return sequence(node.types.map(mapASTToTypeNodes)).map(T.union);
   } else if (ts.isIntersectionTypeNode(node)) {
     return sequence(node.types.map(mapASTToTypeNodes)).map(T.union);
   } else if (node.kind === ts.SyntaxKind.NumberKeyword) {
-    return some(T.number);
+    return ok(T.number);
   } else if (node.kind === ts.SyntaxKind.StringKeyword) {
-    return some(T.string);
+    return ok(T.string);
   } else if (node.kind === ts.SyntaxKind.BooleanKeyword) {
-    return some(T.boolean);
+    return ok(T.boolean);
   } else if (node.kind === ts.SyntaxKind.UndefinedKeyword) {
-    return some(T.undefined);
+    return ok(T.undefined);
   } else if (node.kind === ts.SyntaxKind.VoidKeyword) {
-    return some(T.void);
+    return ok(T.void);
   } else if (node.kind === ts.SyntaxKind.AnyKeyword) {
-    return some(T.any);
+    return ok(T.any);
   } else if (node.kind === ts.SyntaxKind.UnknownKeyword) {
-    return some(T.unknown);
+    return ok(T.unknown);
   } else if (node.kind === ts.SyntaxKind.NeverKeyword) {
-    return some(T.never);
+    return ok(T.never);
   } else if (ts.isLiteralTypeNode(node)) {
     if (ts.isNumericLiteral(node.literal)) {
-      return some(T.numberLit(Number(node.literal.text)));
+      return ok(T.numberLit(Number(node.literal.text)));
     } else if (ts.isStringLiteral(node.literal)) {
-      return some(T.stringLit(node.literal.text));
+      return ok(T.stringLit(node.literal.text));
     } else if (node.literal.kind === ts.SyntaxKind.TrueKeyword) {
-      return some(T.booleanLit(true));
+      return ok(T.booleanLit(true));
     } else if (node.literal.kind === ts.SyntaxKind.FalseKeyword) {
-      return some(T.booleanLit(false));
+      return ok(T.booleanLit(false));
     } else if (node.literal.kind === ts.SyntaxKind.NullKeyword) {
-      return some(T.null);
+      return ok(T.null);
     } else {
-      throw new Error(`Unsupported literal type ${ts.SyntaxKind[node.kind]}`);
+      return err(
+        new Error(`Unsupported literal type ${ts.SyntaxKind[node.kind]}`)
+      );
     }
   } else if (ts.isTupleTypeNode(node)) {
     return sequence(node.elements.map(mapASTToTypeNodes)).map(T.tuple);
@@ -65,6 +92,6 @@ export const mapASTToTypeNodes = (node: ts.Node): Option<TypeNode> => {
       (args) => T.typeReference(node.typeName.getText().trim(), args)
     );
   } else {
-    throw new Error(`Unsupported type ${ts.SyntaxKind[node.kind]}`);
+    return err(new Error(`Unsupported type ${ts.SyntaxKind[node.kind]}`));
   }
 };

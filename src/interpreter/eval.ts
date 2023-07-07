@@ -1,7 +1,7 @@
 import { match, P } from "ts-pattern";
 import { Environment } from ".";
 import { EvaluatedType, T, TypeNode } from "./TypeNode";
-import { none, Option, some } from "this-is-ok/option";
+import { err, ok, Result } from "this-is-ok/result";
 
 const fullyEvaled = (type: EvaluatedType): EvaluatedType => ({
   ...type,
@@ -110,22 +110,27 @@ export const evalTypeOnce = (
       ];
     })
     .otherwise(() => {
-      throw new Error(`Unimplemented case: ${type}`);
+      throw new Error(`Unimplemented case: ${JSON.stringify(type, null, 2)}`);
     });
 
 export const evalType = (
   env: Environment,
   type: TypeNode
-): Option<TypeNode> => {
+): Result<TypeNode, Error> => {
   try {
     const [evaledType, env2] = evalTypeOnce(env, intoEvaluatedType(type));
     if (evaledType.isFullyEvaluated) {
-      return some(evaledType as TypeNode);
+      return ok(evaledType as TypeNode);
     }
 
     return evalType(env2, evaledType);
   } catch (e) {
-    console.error(e, env);
-    return none;
+    if (e instanceof Error) {
+      return err(e);
+    } else if (typeof e === "string") {
+      return err(new Error(e));
+    } else {
+      return err(new Error("Unknown error"));
+    }
   }
 };

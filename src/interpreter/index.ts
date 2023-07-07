@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { TypeNode } from "./TypeNode";
 import { mapASTToTypeNodes } from "./mapASTToTypeNodes";
-import { Option, none, some } from "this-is-ok/option";
+import { Result, err, ok } from "this-is-ok/result";
 
 type TypeIdentifier = string;
 export type Environment = {
@@ -10,7 +10,9 @@ export type Environment = {
 
 export type TypeDeclaration = Extract<TypeNode, { _type: "typeDeclaration" }>;
 
-export const createEnvironment = (sourceCode: string): Option<Environment> => {
+export const createEnvironment = (
+  sourceCode: string
+): Result<Environment, Error> => {
   const sourceFile = ts.createSourceFile(
     "a.ts",
     sourceCode,
@@ -28,13 +30,15 @@ export const createEnvironment = (sourceCode: string): Option<Environment> => {
       }
     });
   } catch (e) {
-    return none;
+    return err(e as Error);
   }
 
-  return some(env);
+  return ok(env);
 };
 
-export const createTypeToEval = (sourceCode: string): Option<TypeNode> => {
+export const createTypeToEval = (
+  sourceCode: string
+): Result<TypeNode, Error> => {
   const sourceFile = ts.createSourceFile(
     "b.ts",
     `type __dummy = ${sourceCode}`,
@@ -42,7 +46,7 @@ export const createTypeToEval = (sourceCode: string): Option<TypeNode> => {
     /*setParentNodes */ true
   );
 
-  let node: Option<TypeNode> = none;
+  let node: Result<TypeNode, Error> = err(new Error("No type found"));
 
   sourceFile.forEachChild((child) => {
     if (ts.isTypeAliasDeclaration(child)) {
