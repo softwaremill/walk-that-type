@@ -1,6 +1,7 @@
 import { match, P } from "ts-pattern";
 import { Environment } from ".";
-import { EvaluatedType, TypeNode } from "./TypeNode";
+import { EvaluatedType, T, TypeNode } from "./TypeNode";
+import { none, Option, some } from "this-is-ok/option";
 
 const fullyEvaled = (type: EvaluatedType): EvaluatedType => ({
   ...type,
@@ -18,59 +19,113 @@ export const evalTypeOnce = (
 ): [EvaluatedType, Environment] =>
   match<EvaluatedType, [EvaluatedType, Environment]>(type)
     .with(
-      { _type: P.union("booleanLiteral", "stringLiteral", "numberLiteral") },
+      {
+        _type: P.union(
+          "booleanLiteral",
+          "stringLiteral",
+          "numberLiteral",
+          "number",
+          "string",
+          "boolean",
+          "null",
+          "undefined",
+          "void",
+          "any",
+          "unknown",
+          "never"
+        ),
+      },
       (t) => [fullyEvaled(t), env]
     )
     .with({ _type: "tuple" }, (t) => {
-      const elements = t.elements.map(
-        (element) => evalTypeOnce(env, intoEvaluatedType(element))[0]
+      const results = t.elements.map((element) =>
+        evalTypeOnce(env, intoEvaluatedType(element))
+      );
+      const elements = results.map((el) => el[0]);
+      const newEnv = results.reduce(
+        (prevEnv, [, e]) => ({ ...prevEnv, ...e }),
+        env
       );
 
       const isFullyEvaluated = elements.every(
         (element) => element.isFullyEvaluated
       );
 
-      return [{ ...t, elements, isFullyEvaluated }, env];
+      return [
+        {
+          ...T.tuple(elements),
+          isFullyEvaluated,
+        },
+        newEnv,
+      ];
+    })
+    .with({ _type: "union" }, (t) => {
+      const results = t.members.map((element) =>
+        evalTypeOnce(env, intoEvaluatedType(element))
+      );
+      const elements = results.map((el) => el[0]);
+      const newEnv = results.reduce(
+        (prevEnv, [, e]) => ({ ...prevEnv, ...e }),
+        env
+      );
+
+      const isFullyEvaluated = elements.every(
+        (element) => element.isFullyEvaluated
+      );
+
+      // TODO: eliminate union members that are subtypes of each other after I implement extends
+
+      return [
+        {
+          ...T.union(elements),
+          isFullyEvaluated,
+        },
+        newEnv,
+      ];
     })
     .with({ _type: "typeReference" }, (t) => {
-      console.log("env222", env);
-      const typeDeclaration = env.find(
-        (ty): ty is Extract<TypeNode, { _type: "typeDeclaration" }> =>
-          ty._type === "typeDeclaration" && ty.name === t.name
-      );
+      const typeDeclaration = env[t.name];
 
       if (!typeDeclaration) {
         throw new Error(`Unknown type ${t.name}`);
       }
+
+      const newEnv = { ...env };
+      typeDeclaration.typeParameters.forEach((ty, idx) => {
+        newEnv[ty] = {
+          _type: "typeDeclaration",
+          name: ty,
+          type: t.typeArguments[idx],
+          text: `type ${ty} = ${t.typeArguments[idx].text}`,
+          typeParameters: [],
+        };
+      });
 
       return [
         {
           ...typeDeclaration.type,
           isFullyEvaluated: false,
         },
-        [
-          ...env,
-          ...typeDeclaration.typeParameters.map(
-            (ty, idx): TypeNode => ({
-              _type: "typeDeclaration",
-              name: ty,
-              type: t.typeArguments[idx],
-              text: `type ${ty} = ${t.typeArguments[idx].text}`,
-              typeParameters: [],
-            })
-          ),
-        ],
+        newEnv,
       ];
     })
     .otherwise(() => {
       throw new Error(`Unimplemented case: ${type}`);
     });
 
-export const evalType = (env: Environment, type: TypeNode): TypeNode => {
-  const [evaledType, env2] = evalTypeOnce(env, intoEvaluatedType(type));
-  if (evaledType.isFullyEvaluated) {
-    return evaledType;
-  }
+export const evalType = (
+  env: Environment,
+  type: TypeNode
+): Option<TypeNode> => {
+  try {
+    const [evaledType, env2] = evalTypeOnce(env, intoEvaluatedType(type));
+    if (evaledType.isFullyEvaluated) {
+      return some(evaledType as TypeNode);
+    }
 
-  return evalType(env2, evaledType);
+    return evalType(env2, evaledType);
+  } catch (e) {
+    console.error(e, env);
+    return none;
+  }
 };

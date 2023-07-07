@@ -14,20 +14,15 @@ function App() {
   console.log("type to eval", typeToEval);
 
   const [evaled, setEvaled] = useState("");
+
   useEffect(() => {
-    try {
-      if (typeToEval) {
-        setEvaled(
-          JSON.stringify(
-            evalType(createEnvironment(envSourceCode), typeToEval),
-            null,
-            2
-          )
-        );
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    typeToEval.tap((ty) => {
+      createEnvironment(envSourceCode).tap((env) => {
+        evalType(env, ty).tap((evaledTy) => {
+          setEvaled(evaledTy.text);
+        });
+      });
+    });
   }, [envSourceCode, typeToEvalSourceCode]);
 
   return (
@@ -47,7 +42,9 @@ function App() {
           setTypeToEvalSourceCode(e.target.value);
         }}
       />
-      <pre>{JSON.stringify(typeToEval, null, 2)}</pre>
+      {typeToEval.isSome && (
+        <pre>{JSON.stringify(typeToEval.unwrap(), null, 2)}</pre>
+      )}
 
       <h2>Evaled type</h2>
       <pre>{evaled}</pre>
