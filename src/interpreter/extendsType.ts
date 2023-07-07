@@ -134,7 +134,10 @@ function matchTuples(
   const includesRest = !!restType;
 
   // if the shape doesn't include a rest type, then the tuple must be the same length
-  if (!includesRest && t.elements.length !== shape.elements.length) {
+  if (
+    (t.elements.length === 0 && shape.elements.length > 1) ||
+    (!includesRest && t.elements.length !== shape.elements.length)
+  ) {
     return {
       extends: false,
       inferredTypes: env,

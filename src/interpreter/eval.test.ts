@@ -1,6 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { evalType } from "./eval";
 import { Environment, createEnvironment } from "./environment";
+import { T } from "./TypeNode";
 
 export const EMPTY_ENV: Environment = {};
 
@@ -68,5 +69,9 @@ describe("eval", () => {
         text: "Z<X>",
       }).unwrap().text
     ).toBe("[42, 42]");
+  });
+
+  test("tuple", () => {
+    expect(evalType(EMPTY_ENV, T.tuple([])).unwrap()).toEqual(T.tuple([]));
   });
 });

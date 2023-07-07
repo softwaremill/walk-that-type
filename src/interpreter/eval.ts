@@ -81,19 +81,31 @@ export const evalTypeOnce = (
       const results = t.elements.map((element) =>
         evalTypeOnce(env, intoEvaluatedType(element))
       );
-      const elements = results.map((el) => el[0]);
+      const elements = results.flatMap((el) => {
+        if (el[0]._type === "rest") {
+          const evaledRest = evalRestType(env, el[0]);
+          if (evaledRest._type === "tuple") {
+            return evaledRest.elements;
+          } else {
+            return evaledRest;
+          }
+        } else {
+          return el[0];
+        }
+      }) as EvaluatedType[];
       const newEnv = results.reduce(
         (prevEnv, [, e]) => ({ ...prevEnv, ...e }),
         env
       );
 
       const isFullyEvaluated = elements.every(
-        (element) => element.isFullyEvaluated
+        (element) => element?.isFullyEvaluated
       );
 
       return [
         {
-          ...T.tuple(elements),
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          ...T.tuple(elements.map(({ isFullyEvaluated, ...r }) => r)),
           isFullyEvaluated,
         },
         newEnv,
@@ -131,7 +143,6 @@ export const evalTypeOnce = (
       }
 
       const newEnv = { ...env };
-      console.log("AAA", typeDeclaration);
       typeDeclaration.typeParameters.forEach((ty, idx) => {
         addToEnvironment(newEnv, ty, t.typeArguments[idx]);
       });
@@ -145,6 +156,7 @@ export const evalTypeOnce = (
       ];
     })
     .otherwise(() => {
+      console.error("CASE", type);
       throw new Error(`Unimplemented case: ${JSON.stringify(type, null, 2)}`);
     });
 
@@ -153,9 +165,12 @@ export const evalType = (
   type: TypeNode
 ): Result<TypeNode, Error> => {
   try {
-    const [evaledType, env2] = evalTypeOnce(env, intoEvaluatedType(type));
-    if (evaledType.isFullyEvaluated) {
-      return ok(evaledType as TypeNode);
+    const [{ isFullyEvaluated, ...evaledType }, env2] = evalTypeOnce(
+      env,
+      intoEvaluatedType(type)
+    );
+    if (isFullyEvaluated) {
+      return ok(evaledType);
     }
 
     return evalType(env2, evaledType);
@@ -169,3 +184,18 @@ export const evalType = (
     }
   }
 };
+
+function evalRestType(env: Environment, t: EvaluatedType): EvaluatedType {
+  if (t._type === "rest") {
+    const tt = evalType(env, t.type).unwrap();
+    if (tt._type !== "tuple") {
+      return t;
+    }
+    return {
+      isFullyEvaluated: true,
+      ...tt,
+    } as Extract<EvaluatedType, { _type: "tuple" }>;
+  } else {
+    return t;
+  }
+}
