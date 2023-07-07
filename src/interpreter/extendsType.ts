@@ -1,6 +1,7 @@
 import { P, match } from "ts-pattern";
-import { Environment } from ".";
+import { Environment, extendEnvironment } from "./environment";
 import { T, TypeNode } from "./TypeNode";
+import { addToEnvironment } from "./environment";
 
 export type ExtendsTypeResult = {
   extends: boolean;
@@ -32,7 +33,7 @@ export const extendsType = (
     // T extends infer X -> T with X = T
     .with([P._, { _type: "infer" }], ([t1, t2]) => ({
       extends: true,
-      inferredTypes: { ...env, [t2.name]: t1 } as Environment,
+      inferredTypes: addToEnvironment({}, t2.name, t1),
     }))
 
     // literals extends their sets
@@ -158,7 +159,7 @@ function matchTuples(
         inferredTypes: env,
       };
     }
-    newEnv = result.inferredTypes;
+    newEnv = extendEnvironment(newEnv, result.inferredTypes);
     lastElemIdxFromFront++;
   }
 
@@ -180,7 +181,7 @@ function matchTuples(
           inferredTypes: env,
         };
       }
-      newEnv = result.inferredTypes;
+      newEnv = extendEnvironment(newEnv, result.inferredTypes);
       lastElemIdxFromBack--;
     }
   }
@@ -197,10 +198,11 @@ function matchTuples(
       const inferredArr = T.tuple(restTypeSubArray);
       return {
         extends: true,
-        inferredTypes: {
-          ...newEnv,
-          [restType.type.name]: inferredArr,
-        } as Environment,
+        inferredTypes: addToEnvironment(
+          newEnv,
+          restType.type.name,
+          inferredArr
+        ),
       };
     } else if (restType.type._type === "array") {
       return extendsType(newEnv, T.tuple(restTypeSubArray), restType.type);

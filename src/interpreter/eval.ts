@@ -1,7 +1,8 @@
 import { match, P } from "ts-pattern";
-import { Environment } from ".";
+import { addToEnvironment, Environment } from "./environment";
 import { EvaluatedType, T, TypeNode } from "./TypeNode";
 import { err, ok, Result } from "this-is-ok/result";
+import { extendsType } from "./extendsType";
 
 const fullyEvaled = (type: EvaluatedType): EvaluatedType => ({
   ...type,
@@ -32,11 +33,50 @@ export const evalTypeOnce = (
           "void",
           "any",
           "unknown",
-          "never"
+          "never",
+          "infer",
+          "rest"
         ),
       },
       (t) => [fullyEvaled(t), env]
     )
+    .with({ _type: "array" }, (t) => {
+      const [evaledType, newEnv] = evalTypeOnce(
+        env,
+        intoEvaluatedType(t.elementType)
+      );
+      return [
+        {
+          ...T.array(evaledType),
+          isFullyEvaluated: evaledType.isFullyEvaluated,
+        },
+        newEnv,
+      ];
+    })
+    .with({ _type: "conditionalType" }, (t) => {
+      const lhs = evalType(env, t.checkType).unwrap();
+      const rhs = evalType(env, t.extendsType).unwrap();
+
+      const result = extendsType(env, lhs, rhs);
+      const newEnv = { ...env, ...result.inferredTypes };
+      if (result.extends) {
+        return [
+          {
+            ...evalType(newEnv, intoEvaluatedType(t.thenType)).unwrap(),
+            isFullyEvaluated: false,
+          },
+          newEnv,
+        ];
+      } else {
+        return [
+          {
+            ...evalType(newEnv, intoEvaluatedType(t.elseType)).unwrap(),
+            isFullyEvaluated: false,
+          },
+          newEnv,
+        ];
+      }
+    })
     .with({ _type: "tuple" }, (t) => {
       const results = t.elements.map((element) =>
         evalTypeOnce(env, intoEvaluatedType(element))
@@ -91,14 +131,9 @@ export const evalTypeOnce = (
       }
 
       const newEnv = { ...env };
+      console.log("AAA", typeDeclaration);
       typeDeclaration.typeParameters.forEach((ty, idx) => {
-        newEnv[ty] = {
-          _type: "typeDeclaration",
-          name: ty,
-          type: t.typeArguments[idx],
-          text: `type ${ty} = ${t.typeArguments[idx].text}`,
-          typeParameters: [],
-        };
+        addToEnvironment(newEnv, ty, t.typeArguments[idx]);
       });
 
       return [

@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { evalType } from "./eval";
-import { Environment, createEnvironment } from ".";
+import { Environment, createEnvironment } from "./environment";
 
 export const EMPTY_ENV: Environment = {};
 

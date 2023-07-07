@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { createEnvironment, createTypeToEval } from "./interpreter";
+import { createTypeToEval } from "./interpreter";
 import { evalType } from "./interpreter/eval";
+import { createEnvironment } from "./interpreter/environment";
 
 function App() {
   const [envSourceCode, setEnvSourceCode] = useState(

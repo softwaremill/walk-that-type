@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createEnvironment } from ".";
+import { createEnvironment } from "./environment";
 import { extendsType } from "./extendsType";
 import { T, TypeNode } from "./TypeNode";
 import { EMPTY_ENV } from "./eval.test";
@@ -154,7 +154,7 @@ describe("extends", () => {
         exampleTuple,
         T.tuple([T.infer("X"), T.rest(T.array(T.any))])
       ).inferredTypes.X
-    ).toEqual(T.numberLit(1));
+    ).toEqual(T.typeDeclaration("X", [], T.numberLit(1)));
 
     expect(
       extendsType(
@@ -162,7 +162,7 @@ describe("extends", () => {
         exampleTuple,
         T.tuple([T.rest(T.array(T.any)), T.infer("X")])
       ).inferredTypes.X
-    ).toEqual(T.stringLit("c"));
+    ).toEqual(T.typeDeclaration("X", [], T.stringLit("c")));
 
     expect(
       extendsType(
@@ -171,8 +171,8 @@ describe("extends", () => {
         T.tuple([T.infer("X"), T.rest(T.array(T.any)), T.infer("Y")])
       ).inferredTypes
     ).toEqual({
-      X: T.numberLit(1),
-      Y: T.stringLit("c"),
+      X: T.typeDeclaration("X", [], T.numberLit(1)),
+      Y: T.typeDeclaration("Y", [], T.stringLit("c")),
     });
 
     expect(
@@ -182,8 +182,12 @@ describe("extends", () => {
         T.tuple([T.infer("Head"), T.rest(T.infer("Rest"))])
       ).inferredTypes
     ).toEqual({
-      Head: T.numberLit(1),
-      Rest: T.tuple(exampleTuple.elements.slice(1)),
+      Head: T.typeDeclaration("Head", [], T.numberLit(1)),
+      Rest: T.typeDeclaration(
+        "Rest",
+        [],
+        T.tuple(exampleTuple.elements.slice(1))
+      ),
     });
   });
 });
