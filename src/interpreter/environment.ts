@@ -3,6 +3,7 @@ import { TypeDeclaration } from ".";
 import ts from "typescript";
 import { mapASTToTypeNodes } from "./mapASTToTypeNodes";
 import { T, TypeNode } from "./TypeNode";
+import { Option, of } from "this-is-ok/option";
 
 export type TypeIdentifier = string;
 export type Environment = {
@@ -49,3 +50,8 @@ export const extendEnvironment = (env: Environment, newEnv: Environment) => ({
   ...env,
   ...newEnv,
 });
+
+export const lookupType = (
+  env: Environment,
+  name: TypeIdentifier
+): Option<TypeDeclaration> => of(env[name]);

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createTypeToEval } from "./interpreter";
 import { evalType } from "./interpreter/eval";
 import { createEnvironment } from "./interpreter/environment";
+import { findAvailableCommands } from "./interpreter/commands";
 
 function App() {
   const [envSourceCode, setEnvSourceCode] = useState(
@@ -61,6 +62,19 @@ function App() {
         </pre>
       )}
 
+      <h2>Cmds</h2>
+      <pre>
+        {typeToEval.isOk &&
+          typeToEval
+            .map((v) =>
+              JSON.stringify(
+                findAvailableCommands(env.unwrapOr({}), v),
+                null,
+                2
+              )
+            )
+            .unwrap()}
+      </pre>
       <h2>Evaled type</h2>
       {typeToEval.isErr &&
         "error" in typeToEval &&

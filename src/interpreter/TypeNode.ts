@@ -1,4 +1,8 @@
-export type TypeNode = { text: string } & (
+import { v4 as uuid } from "uuid";
+
+export type NodeId = string;
+
+export type TypeNode = { text: string; nodeId: NodeId } & (
   | {
       _type: "typeDeclaration";
       name: string;
@@ -53,30 +57,35 @@ const typeDeclaration = (
   typeParameters: params,
   type,
   text: `type ${name}<${params.join(", ")}> = ${type}`,
+  nodeId: uuid(),
 });
 
 const numberLit = (value: number): TypeNode => ({
   _type: "numberLiteral",
   value,
   text: `${value}`,
+  nodeId: uuid(),
 });
 
 const stringLit = (value: string): TypeNode => ({
   _type: "stringLiteral",
   value,
   text: `"${value}"`,
+  nodeId: uuid(),
 });
 
 const booleanLit = (value: boolean): TypeNode => ({
   _type: "booleanLiteral",
   value,
   text: `${value}`,
+  nodeId: uuid(),
 });
 
 const tuple = (types: TypeNode[]): TypeNode => ({
   _type: "tuple",
   elements: types,
   text: `[${types.map((t) => t.text).join(", ")}]`,
+  nodeId: uuid(),
 });
 
 const typeReference = (name: string, args: TypeNode[]): TypeNode => ({
@@ -84,81 +93,97 @@ const typeReference = (name: string, args: TypeNode[]): TypeNode => ({
   name,
   typeArguments: args,
   text: `${name}${args.length > 0 ? "<" + args.join(", ") + ">" : ""}`,
+  nodeId: uuid(),
 });
 
-const number = {
+const number = (): TypeNode => ({
   _type: "number",
   text: "number",
-} as TypeNode;
+  nodeId: uuid(),
+});
 
-const string = {
+const string = (): TypeNode => ({
   _type: "string",
   text: "string",
-} as TypeNode;
+  nodeId: uuid(),
+});
 
-const boolean = {
+const boolean = (): TypeNode => ({
   _type: "boolean",
   text: "boolean",
-} as TypeNode;
+  nodeId: uuid(),
+});
 
-const nullKeyword = {
+const nullKeyword = (): TypeNode => ({
   _type: "null",
   text: "null",
-} as TypeNode;
 
-const undefinedKeyword = {
+  nodeId: uuid(),
+});
+
+const undefinedKeyword = (): TypeNode => ({
   _type: "undefined",
   text: "undefined",
-} as TypeNode;
+  nodeId: uuid(),
+});
 
-const voidKeyword = {
+const voidKeyword = (): TypeNode => ({
   _type: "void",
   text: "void",
-} as TypeNode;
+  nodeId: uuid(),
+});
 
-const anyKeyword = {
+const anyKeyword = (): TypeNode => ({
   _type: "any",
   text: "any",
-} as TypeNode;
+  nodeId: uuid(),
+});
 
-const neverKeyword = {
+const neverKeyword = (): TypeNode => ({
   _type: "never",
   text: "never",
-} as TypeNode;
+  nodeId: uuid(),
+});
 
-const unknownKeyword = {
+const unknownKeyword = (): TypeNode => ({
   _type: "unknown",
   text: "unknown",
-} as TypeNode;
+  nodeId: uuid(),
+});
 
 const union = (members: TypeNode[]): TypeNode => ({
   _type: "union",
   members,
   text: members.map((m) => m.text).join(" | "),
+  nodeId: uuid(),
 });
 
 const intersection = (members: TypeNode[]): TypeNode => ({
   _type: "intersection",
   members,
   text: members.map((m) => m.text).join(" & "),
+  nodeId: uuid(),
 });
 
 const infer = (variableName: string): TypeNode => ({
   _type: "infer",
   name: variableName,
   text: `infer ${variableName}`,
+  nodeId: uuid(),
 });
 
 const rest = (type: TypeNode): TypeNode => ({
   _type: "rest",
   type,
   text: `...${type.text}`,
+  nodeId: uuid(),
 });
 
 const array = (elementType: TypeNode): TypeNode => ({
   _type: "array",
   elementType,
   text: `${elementType.text}[]`,
+  nodeId: uuid(),
 });
 
 const conditionalType = (
@@ -173,6 +198,7 @@ const conditionalType = (
   thenType,
   elseType,
   text: `${checkType} extends ${extendsType} ? ${thenType} : ${elseType}`,
+  nodeId: uuid(),
 });
 
 export const T = {

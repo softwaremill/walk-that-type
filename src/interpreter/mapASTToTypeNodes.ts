@@ -22,15 +22,12 @@ const sequence = <T, E>(opts: Result<T, E>[]): Result<T[], E> => {
 
 export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
   if (ts.isTypeAliasDeclaration(node)) {
-    return mapASTToTypeNodes(node.type).map(
-      (type): TypeNode => ({
-        _type: "typeDeclaration",
-        typeParameters:
-          node.typeParameters?.map((param) => param.name.getText()) ?? [],
-        text: node.getText().trim(),
-        name: node.name.getText().trim(),
-        type,
-      })
+    return mapASTToTypeNodes(node.type).map((type) =>
+      T.typeDeclaration(
+        node.name.getText().trim(),
+        node.typeParameters?.map((param) => param.name.getText()) ?? [],
+        type
+      )
     );
   } else if (ts.isConditionalTypeNode(node)) {
     return mapASTToTypeNodes(node.checkType).do((checkType) => {
@@ -54,21 +51,21 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
   } else if (ts.isIntersectionTypeNode(node)) {
     return sequence(node.types.map(mapASTToTypeNodes)).map(T.union);
   } else if (node.kind === ts.SyntaxKind.NumberKeyword) {
-    return ok(T.number);
+    return ok(T.number());
   } else if (node.kind === ts.SyntaxKind.StringKeyword) {
-    return ok(T.string);
+    return ok(T.string());
   } else if (node.kind === ts.SyntaxKind.BooleanKeyword) {
-    return ok(T.boolean);
+    return ok(T.boolean());
   } else if (node.kind === ts.SyntaxKind.UndefinedKeyword) {
-    return ok(T.undefined);
+    return ok(T.undefined());
   } else if (node.kind === ts.SyntaxKind.VoidKeyword) {
-    return ok(T.void);
+    return ok(T.void());
   } else if (node.kind === ts.SyntaxKind.AnyKeyword) {
-    return ok(T.any);
+    return ok(T.any());
   } else if (node.kind === ts.SyntaxKind.UnknownKeyword) {
-    return ok(T.unknown);
+    return ok(T.unknown());
   } else if (node.kind === ts.SyntaxKind.NeverKeyword) {
-    return ok(T.never);
+    return ok(T.never());
   } else if (ts.isLiteralTypeNode(node)) {
     if (ts.isNumericLiteral(node.literal)) {
       return ok(T.numberLit(Number(node.literal.text)));
@@ -79,7 +76,7 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
     } else if (node.literal.kind === ts.SyntaxKind.FalseKeyword) {
       return ok(T.booleanLit(false));
     } else if (node.literal.kind === ts.SyntaxKind.NullKeyword) {
-      return ok(T.null);
+      return ok(T.null());
     } else {
       return err(
         new Error(`Unsupported literal type ${ts.SyntaxKind[node.kind]}`)
