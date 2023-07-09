@@ -1,8 +1,7 @@
-body {
-  background-color: #282c34;
-  color: white;
-  font-family: "Roboto", sans-serif;
-  font-size: 1.2rem;
-  margin: 0;
-  padding: 16px;
+.ProseMirror {
+  padding: 0 !important;
+}
+
+pre {
+  margin: 0 !important;
 }

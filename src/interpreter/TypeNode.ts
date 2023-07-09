@@ -92,7 +92,9 @@ const typeReference = (name: string, args: TypeNode[]): TypeNode => ({
   _type: "typeReference",
   name,
   typeArguments: args,
-  text: `${name}${args.length > 0 ? "<" + args.join(", ") + ">" : ""}`,
+  text: `${name}${
+    args.length > 0 ? "<" + args.map((a) => a.text).join(", ") + ">" : ""
+  }`,
   nodeId: uuid(),
 });
 
@@ -197,7 +199,9 @@ const conditionalType = (
   extendsType,
   thenType,
   elseType,
-  text: `${checkType} extends ${extendsType} ? ${thenType} : ${elseType}`,
+  text: `${checkType.text} extends ${extendsType.text} 
+  ? ${thenType.text} 
+  : ${elseType.text}`,
   nodeId: uuid(),
 });
 

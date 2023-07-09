@@ -1,89 +1,136 @@
-import { useEffect, useState } from "react";
-import { createTypeToEval } from "./interpreter";
-import { evalType } from "./interpreter/eval";
-import { createEnvironment } from "./interpreter/environment";
-import { findAvailableCommands } from "./interpreter/commands";
+import { Flex, Stack, Text } from "@mantine/core";
+import { Prism } from "@mantine/prism";
+
+import { RichTextEditor } from "@mantine/tiptap";
+import { useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { lowlight } from "lowlight";
+import tsLanguageSyntax from "highlight.js/lib/languages/typescript";
+import { useTypedDispatch, useTypedSelector } from "./store";
+import {
+  selectAvailableCommands,
+  setEnvSourceCode,
+  setTypeToEvalSourceCode,
+} from "./reducer";
+
+// register languages that your are planning to use
+lowlight.registerLanguage("ts", tsLanguageSyntax);
+
+const INITIAL_ENV =
+  "type First<T extends any[]> = T extends [infer H, ...any[]] ? H : never;";
+const INITIAL_TYPE_TO_EVAL = "First<[1, 2, 3]>";
 
 function App() {
-  const [envSourceCode, setEnvSourceCode] = useState(
-    "type First<T extends any[]> = T extends [infer Head, ...any] ? Head : never;"
-  );
-  const [typeToEvalSourceCode, setTypeToEvalSourceCode] =
-    useState("First<[1, 2, 3]>");
-
-  const env = createEnvironment(envSourceCode);
-  console.log("env", env);
-
-  const typeToEval = createTypeToEval(typeToEvalSourceCode);
-  console.log("type to eval", typeToEval);
-
-  const [evaled, setEvaled] = useState("");
-
-  useEffect(() => {
-    typeToEval.map((ty) => {
-      createEnvironment(envSourceCode).map((env) => {
-        const evaledTy = evalType(env, ty);
-        if (evaledTy.isOk) {
-          setEvaled(evaledTy.unwrap().text);
-        } else {
-          setEvaled(
-            "ERROR: " + (evaledTy.variant === "err" ? evaledTy.error : "")
-          );
-        }
-      });
-    });
-  }, [envSourceCode, typeToEvalSourceCode]);
+  const dispatch = useTypedDispatch();
+  const typeToEval = useTypedSelector((s) => s.app.currentlyEvaledType);
+  const env = useTypedSelector((s) => s.app.env);
+  const commands = useTypedSelector(selectAvailableCommands);
 
   return (
-    <div>
-      <h2>Environment</h2>
-      {env.isErr && "error" in env && env.error instanceof Error && (
-        <pre style={{ color: "red" }}>{env.error.message}</pre>
-      )}
-      <textarea
-        value={envSourceCode}
-        onChange={(e) => {
-          setEnvSourceCode(e.target.value);
+    <Stack p={32} w="100%" mih={"100vh"}>
+      <Flex
+        sx={{
+          fontFamily: "monospace",
+          fontSize: 24,
+          borderBottom: "solid 2px black",
         }}
-      />
+        pb={32}
+      >
+        walk-that-type 0.0.1
+      </Flex>
 
-      <h2>Type to evaluate</h2>
-      <textarea
-        value={typeToEvalSourceCode}
-        onChange={(e) => {
-          setTypeToEvalSourceCode(e.target.value);
-        }}
-      />
-      {typeToEval.isOk ? (
-        <pre>{JSON.stringify(typeToEval.unwrap(), null, 2)}</pre>
-      ) : (
-        <pre style={{ color: "red" }}>
-          {JSON.stringify(typeToEval, null, 2)}
-        </pre>
-      )}
+      <Flex w="100%">
+        <Stack w="100%">
+          <Stack>
+            <p>Environment editor</p>
+            <CodeEditor
+              initialCode={INITIAL_ENV}
+              onCodeUpdate={(env) => {
+                dispatch(setEnvSourceCode(env));
+              }}
+              errorMessage={typeof env === "string" ? env : undefined}
+            />
+          </Stack>
+          <Stack>
+            <p>Type to evaluate</p>
+            <CodeEditor
+              initialCode={INITIAL_TYPE_TO_EVAL}
+              onCodeUpdate={(t) => {
+                dispatch(setTypeToEvalSourceCode(t));
+              }}
+              errorMessage={
+                !typeToEval
+                  ? "ERROR: something wrong with this type"
+                  : undefined
+              }
+            />
+          </Stack>
+        </Stack>
 
-      <h2>Cmds</h2>
-      <pre>
-        {typeToEval.isOk &&
-          typeToEval
-            .map((v) =>
-              JSON.stringify(
-                findAvailableCommands(env.unwrapOr({}), v),
-                null,
-                2
-              )
-            )
-            .unwrap()}
-      </pre>
-      <h2>Evaled type</h2>
-      {typeToEval.isErr &&
-        "error" in typeToEval &&
-        typeToEval.error instanceof Error && (
-          <pre style={{ color: "red" }}>{typeToEval.error.message}</pre>
-        )}
-      <pre>{evaled}</pre>
-    </div>
+        <Stack w="100%">
+          <Prism language="typescript" noCopy>
+            {typeToEval == null ? "" : typeToEval.text}
+          </Prism>
+          {commands.map((c) => (
+            <Flex key={c.target}>
+              <Text>{JSON.stringify(c._command)}</Text>
+            </Flex>
+          ))}
+        </Stack>
+      </Flex>
+    </Stack>
   );
 }
 
 export default App;
+
+export type CodeEditorProps = {
+  onCodeUpdate: (code: string) => void;
+  errorMessage?: string;
+  initialCode: string;
+};
+
+function CodeEditor({
+  onCodeUpdate,
+  errorMessage,
+  initialCode,
+}: CodeEditorProps) {
+  const editor = useEditor(
+    {
+      extensions: [
+        StarterKit,
+        CodeBlockLowlight.configure({
+          lowlight,
+          defaultLanguage: "typescript",
+        }),
+      ],
+      content: `<pre><code>${initialCode}</code></pre>`,
+      onUpdate: ({ editor, transaction }) => {
+        const currentContent = transaction.doc.textContent;
+        if (!transaction.doc.toString().includes("codeBlock")) {
+          editor.commands.setContent(
+            "<pre><code>" + currentContent + "</code></pre>"
+          );
+        }
+        onCodeUpdate(currentContent);
+      },
+    },
+    [initialCode]
+  );
+
+  return (
+    <Stack>
+      <RichTextEditor
+        editor={editor}
+        sx={(theme) => ({
+          border: errorMessage ? `2px solid ${theme.colors.red[9]}` : "none",
+        })}
+        p={0}
+      >
+        <RichTextEditor.Content p={0} />
+      </RichTextEditor>
+      {errorMessage && <Text color="red.9">{errorMessage}</Text>}
+    </Stack>
+  );
+}
