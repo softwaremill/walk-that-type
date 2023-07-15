@@ -1,4 +1,4 @@
-import { Flex, Stack, Text } from "@mantine/core";
+import { Box, Flex, Stack, Text } from "@mantine/core";
 import { Prism } from "@mantine/prism";
 
 import { RichTextEditor } from "@mantine/tiptap";
@@ -9,23 +9,32 @@ import { lowlight } from "lowlight";
 import tsLanguageSyntax from "highlight.js/lib/languages/typescript";
 import { useTypedDispatch, useTypedSelector } from "./store";
 import {
-  selectAvailableCommands,
+  INITIAL_ENV,
+  INITIAL_TYPE_TO_EVAL,
   setEnvSourceCode,
   setTypeToEvalSourceCode,
 } from "./reducer";
+import { printTypeNode } from "./interpreter/TypeNode";
+import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
+import { useMemo } from "react";
+import { Accordion } from "@mantine/core";
 
 // register languages that your are planning to use
 lowlight.registerLanguage("ts", tsLanguageSyntax);
-
-const INITIAL_ENV =
-  "type First<T extends any[]> = T extends [infer H, ...any[]] ? H : never;";
-const INITIAL_TYPE_TO_EVAL = "First<[1, 2, 3]>";
 
 function App() {
   const dispatch = useTypedDispatch();
   const typeToEval = useTypedSelector((s) => s.app.currentlyEvaledType);
   const env = useTypedSelector((s) => s.app.env);
-  const commands = useTypedSelector(selectAvailableCommands);
+
+  const trace = useMemo(() => {
+    if (typeToEval && typeof env !== "string") {
+      console.log("evaluating", typeToEval, env);
+      return getEvalTrace(typeToEval, env);
+    } else {
+      return null;
+    }
+  }, [typeToEval, env]);
 
   return (
     <Stack p={32} w="100%" mih={"100vh"}>
@@ -68,17 +77,35 @@ function App() {
           </Stack>
         </Stack>
 
-        <Stack w="100%">
-          <Prism language="typescript" noCopy>
-            {typeToEval == null ? "" : typeToEval.text}
-          </Prism>
-          {commands.map((c) => (
-            <Flex key={c.target}>
-              <Text>{JSON.stringify(c._command)}</Text>
-            </Flex>
-          ))}
-        </Stack>
+        <Stack w="100%">{trace && renderTrace(trace)}</Stack>
       </Flex>
+    </Stack>
+  );
+}
+
+function renderTrace(trace: EvalTrace) {
+  const [initialType, ...steps] = trace;
+
+  return (
+    <Stack>
+      <Prism language="typescript" noCopy>
+        {printTypeNode(initialType)}
+      </Prism>
+      {steps.map((step) => (
+        <>
+          {/* <Accordion>
+            <Accordion.Item value="expand">
+              <Accordion.Control>Expand</Accordion.Control>
+              <Accordion.Panel>{renderTrace(step.evalTrace)}</Accordion.Panel>
+            </Accordion.Item>
+          </Accordion> */}
+          {/* <pre>{JSON.stringify(step.resultEnv, null, 2)}</pre> */}
+
+          <Prism language="typescript" noCopy>
+            {printTypeNode(step.result)}
+          </Prism>
+        </>
+      ))}
     </Stack>
   );
 }

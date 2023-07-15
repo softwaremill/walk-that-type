@@ -1,9 +1,13 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { Environment, createEnvironment } from "./interpreter/environment";
-import { NodeId, TypeNode } from "./interpreter/TypeNode";
+import { TypeNode } from "./interpreter/TypeNode";
 import { createTypeToEval } from "./interpreter";
-import { findAvailableCommands } from "./interpreter/commands";
+import {
+  Command,
+  executeCommand,
+  findAvailableCommands,
+} from "./interpreter/commands";
 import { RootState } from "./store";
 
 export type AppState = {
@@ -15,9 +19,9 @@ export type AppState = {
   evaledTypeHistory: TypeNode[];
 };
 
-const INITIAL_ENV =
-  "type First<T extends any[]> = T extends [infer H, ...any[]] ? H : never;";
-const INITIAL_TYPE_TO_EVAL = "First<[1, 2, 3]>";
+export const INITIAL_ENV =
+  "type Last<T extends any> = T extends [infer L] ? L : T extends [infer _, ...infer Rest] ? Last<Rest> : never;";
+export const INITIAL_TYPE_TO_EVAL = "Last<[1, 2, 3]>";
 
 const initialState: AppState = {
   envSourceCode: INITIAL_ENV,
@@ -63,14 +67,25 @@ export const AppSlice = createSlice({
         ? [createTypeToEval(action.payload).unwrap()]
         : [];
     },
-    executeCommand: (state, action: PayloadAction<NodeId>) => {
-      // TODO:
+    executeCommandAction: (state, action: PayloadAction<Command>) => {
+      if (typeof state.env === "string") return;
+      if (state.currentlyEvaledType === null) return;
+      const [newType, newEnv] = executeCommand(
+        state.env,
+        state.currentlyEvaledType,
+        action.payload
+      );
+      state.currentlyEvaledType = newType;
+      state.env = newEnv;
     },
   },
 });
 
-export const { setEnvSourceCode, setTypeToEvalSourceCode, executeCommand } =
-  AppSlice.actions;
+export const {
+  setEnvSourceCode,
+  setTypeToEvalSourceCode,
+  executeCommandAction,
+} = AppSlice.actions;
 
 export const selectAvailableCommands = createSelector(
   (state: RootState) => state.app.env,

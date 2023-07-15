@@ -8,8 +8,14 @@ export type ExtendsTypeResult = {
   inferredTypes: Environment;
 };
 
-const deepEquals = (t1: TypeNode, t2: TypeNode): boolean =>
-  JSON.stringify(t1) === JSON.stringify(t2);
+const deepEquals = (t1: TypeNode, t2: TypeNode): boolean => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { nodeId: _nodeId1, ...t1WithoutId } = t1;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { nodeId: _nodeId2, ...t2WithoutId } = t2;
+
+  return JSON.stringify(t1WithoutId) === JSON.stringify(t2WithoutId);
+};
 
 const positiveExtendsResultWithoutInfer = (
   env: Environment

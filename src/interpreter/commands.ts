@@ -1,8 +1,15 @@
 import { P, match } from "ts-pattern";
-import { NodeId, TypeNode } from "./TypeNode";
-import { Environment, lookupType } from "./environment";
+import { NodeId, TypeNode, updateTypeNode } from "./TypeNode";
+import {
+  Environment,
+  addToEnvironment,
+  extendEnvironment,
+  lookupType,
+} from "./environment";
+import { evalType } from "./eval";
+import { extendsType } from "./extendsType";
 
-export type Command = { target: NodeId } & (
+export type Command = { target: NodeId; text: string } & (
   | { _command: "replaceWithDefinition" }
   | { _command: "simplifyUnion" }
   | { _command: "evaluateConditionalType" }
@@ -60,6 +67,7 @@ export const findAvailableCommands = (
         ? addCommand(commands, {
             target: t.nodeId,
             _command: "replaceWithDefinition",
+            text: t.text(),
           })
         : {};
 
@@ -78,6 +86,7 @@ export const findAvailableCommands = (
             addCommand(commands, {
               target: tt.nodeId,
               _command: "applyRest",
+              text: t.text(),
             });
           }
         });
@@ -93,6 +102,7 @@ export const findAvailableCommands = (
       const cmds = addCommand(commands, {
         target: t.nodeId,
         _command: "evaluateConditionalType",
+        text: t.text(),
       });
 
       return mergeCommands(
@@ -112,3 +122,72 @@ export const findAvailableCommands = (
       throw new Error("Type declaration shouldn't be in type to be evaluated");
     })
     .exhaustive();
+
+// modifies the type in place
+// FIXME: this code is trash, but it's just for a PoC
+export const executeCommand = (
+  env: Environment,
+  t: TypeNode,
+  c: Command
+): [TypeNode, Environment] => {
+  return updateTypeNode(t, c.target, (tt) => {
+    switch (c._command) {
+      case "replaceWithDefinition": {
+        if (tt._type !== "typeReference") {
+          throw new Error(
+            "replaceWithDefinition: innerT._type !== typeReference"
+          );
+        }
+        const typeDeclaration = env[tt.name];
+
+        if (!typeDeclaration) {
+          throw new Error(`Unknown type ${tt.name}`);
+        }
+
+        const newEnv = { ...env };
+        typeDeclaration.typeParameters.forEach((ty, idx) => {
+          addToEnvironment(newEnv, ty, tt.typeArguments[idx]);
+        });
+
+        // multipleReplaceByDef(
+        //   typeDeclaration.type,
+        //   newEnv,
+        //   typeDeclaration.typeParameters
+        // );
+
+        return [typeDeclaration.type, newEnv];
+      }
+      case "simplifyUnion": {
+        throw new Error("not implemented");
+      }
+      case "evaluateConditionalType": {
+        if (tt._type !== "conditionalType") {
+          throw new Error(
+            "evaluateConditionalType: innerT._type !== conditionalType"
+          );
+        }
+
+        const lhs = evalType(env, tt.checkType).unwrap();
+        const rhs = evalType(env, tt.extendsType).unwrap();
+
+        const result = extendsType(env, lhs, rhs);
+
+        const evaluatedThenType = result.extends ? tt.thenType : tt.elseType;
+
+        // multipleReplaceByDef(
+        //   evaluatedThenType,
+        //   extendEnvironment(env, result.inferredTypes),
+        //   Object.keys(result.inferredTypes)
+        // );
+
+        return [
+          evaluatedThenType,
+          extendEnvironment(env, result.inferredTypes),
+        ];
+      }
+      case "applyRest": {
+        throw new Error("not implemented");
+      }
+    }
+  });
+};
