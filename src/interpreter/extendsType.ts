@@ -17,11 +17,9 @@ const deepEquals = (t1: TypeNode, t2: TypeNode): boolean => {
   return JSON.stringify(t1WithoutId) === JSON.stringify(t2WithoutId);
 };
 
-const positiveExtendsResultWithoutInfer = (
-  env: Environment
-): ExtendsTypeResult => ({
+const positiveExtendsResultWithoutInfer = (): ExtendsTypeResult => ({
   extends: true,
-  inferredTypes: env,
+  inferredTypes: {},
 });
 
 export const extendsType = (
@@ -33,7 +31,7 @@ export const extendsType = (
     // T extends T -> true
     .when(
       ([t1, t2]) => deepEquals(t1, t2),
-      () => positiveExtendsResultWithoutInfer(env)
+      () => positiveExtendsResultWithoutInfer()
     )
 
     // T extends infer X -> T with X = T
@@ -44,13 +42,13 @@ export const extendsType = (
 
     // literals extends their sets
     .with([{ _type: "numberLiteral" }, { _type: "number" }], () =>
-      positiveExtendsResultWithoutInfer(env)
+      positiveExtendsResultWithoutInfer()
     )
     .with([{ _type: "booleanLiteral" }, { _type: "boolean" }], () =>
-      positiveExtendsResultWithoutInfer(env)
+      positiveExtendsResultWithoutInfer()
     )
     .with([{ _type: "stringLiteral" }, { _type: "string" }], () =>
-      positiveExtendsResultWithoutInfer(env)
+      positiveExtendsResultWithoutInfer()
     )
 
     // Abstract types
@@ -59,10 +57,10 @@ export const extendsType = (
         { _type: "any" },
         { _type: P.union("any", "unknown", "void", "undefined", "null") },
       ],
-      () => positiveExtendsResultWithoutInfer(env)
+      () => positiveExtendsResultWithoutInfer()
     )
     .with([{ _type: "unknown" }, { _type: P.union("any", "unknown") }], () =>
-      positiveExtendsResultWithoutInfer(env)
+      positiveExtendsResultWithoutInfer()
     )
     .with(
       [
@@ -71,7 +69,7 @@ export const extendsType = (
           _type: P.union("any", "unknown"),
         },
       ],
-      () => positiveExtendsResultWithoutInfer(env)
+      () => positiveExtendsResultWithoutInfer()
     )
     .with(
       [
@@ -80,7 +78,7 @@ export const extendsType = (
           _type: P.union("any", "unknown", "void"),
         },
       ],
-      () => positiveExtendsResultWithoutInfer(env)
+      () => positiveExtendsResultWithoutInfer()
     )
     .with(
       [
@@ -89,7 +87,7 @@ export const extendsType = (
           _type: P.union("any", "unknown"),
         },
       ],
-      () => positiveExtendsResultWithoutInfer(env)
+      () => positiveExtendsResultWithoutInfer()
     )
     .with(
       [
@@ -98,12 +96,12 @@ export const extendsType = (
           _type: P.union("any", "unknown", "void", "undefined", "null"),
         },
       ],
-      () => positiveExtendsResultWithoutInfer(env)
+      () => positiveExtendsResultWithoutInfer()
     )
 
     // EVERYTHING extends any and unknown
     .with([{ _type: P._ }, { _type: P.union("any", "unknown") }], () =>
-      positiveExtendsResultWithoutInfer(env)
+      positiveExtendsResultWithoutInfer()
     )
 
     // TUPLES
@@ -116,7 +114,7 @@ export const extendsType = (
         extends: t1.elements.every(
           (el) => extendsType(env, el, t2.elementType).extends
         ),
-        inferredTypes: env,
+        inferredTypes: {},
       };
     })
 
@@ -124,7 +122,7 @@ export const extendsType = (
     .otherwise(() => {
       return {
         extends: false,
-        inferredTypes: env,
+        inferredTypes: {},
       };
     });
 
@@ -133,7 +131,8 @@ function matchTuples(
   t: Extract<TypeNode, { _type: "tuple" }>,
   shape: Extract<TypeNode, { _type: "tuple" }>
 ): ExtendsTypeResult {
-  let newEnv: Environment = { ...env };
+  let justInferredTypes: Environment = {};
+
   const restType = shape.elements.find((el) => el._type === "rest") as
     | undefined
     | Extract<TypeNode, { _type: "rest" }>; // there can be at most one rest type
@@ -146,7 +145,7 @@ function matchTuples(
   ) {
     return {
       extends: false,
-      inferredTypes: env,
+      inferredTypes: {},
     };
   }
 
@@ -158,17 +157,20 @@ function matchTuples(
     shape.elements[lastElemIdxFromFront]._type !== "rest"
   ) {
     const result = extendsType(
-      newEnv,
+      extendEnvironment(env, justInferredTypes),
       t.elements[lastElemIdxFromFront],
       shape.elements[lastElemIdxFromFront]
     );
     if (!result.extends) {
       return {
         extends: false,
-        inferredTypes: env,
+        inferredTypes: {},
       };
     }
-    newEnv = extendEnvironment(newEnv, result.inferredTypes);
+    justInferredTypes = extendEnvironment(
+      justInferredTypes,
+      result.inferredTypes
+    );
     lastElemIdxFromFront++;
   }
 
@@ -180,17 +182,20 @@ function matchTuples(
         "rest"
     ) {
       const result = extendsType(
-        newEnv,
+        extendEnvironment(env, justInferredTypes),
         t.elements[t.elements.length - 1 - lastElemIdxFromBack],
         shape.elements[shape.elements.length - 1 - lastElemIdxFromBack]
       );
       if (!result.extends) {
         return {
           extends: false,
-          inferredTypes: env,
+          inferredTypes: {},
         };
       }
-      newEnv = extendEnvironment(newEnv, result.inferredTypes);
+      justInferredTypes = extendEnvironment(
+        justInferredTypes,
+        result.inferredTypes
+      );
       lastElemIdxFromBack--;
     }
   }
@@ -208,18 +213,22 @@ function matchTuples(
       return {
         extends: true,
         inferredTypes: addToEnvironment(
-          newEnv,
+          justInferredTypes,
           restType.type.name,
           inferredArr
         ),
       };
     } else if (restType.type._type === "array") {
-      return extendsType(newEnv, T.tuple(restTypeSubArray), restType.type);
+      return extendsType(
+        extendEnvironment(env, justInferredTypes),
+        T.tuple(restTypeSubArray),
+        restType.type
+      );
     }
   }
 
   return {
     extends: true,
-    inferredTypes: newEnv,
+    inferredTypes: justInferredTypes,
   };
 }

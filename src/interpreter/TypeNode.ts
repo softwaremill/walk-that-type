@@ -332,8 +332,17 @@ export const mapType = (
         elementType: mapType(type.elementType, f),
       };
 
-    case "typeReference":
-      return f(type);
+    case "typeReference": {
+      if (type.typeArguments.length === 0) {
+        return f(type);
+      } else {
+        const typeArguments = type.typeArguments.map((a) => mapType(a, f));
+        return {
+          ...type,
+          typeArguments,
+        };
+      }
+    }
 
     case "union": {
       const members = type.members.map((m) => mapType(m, f));
@@ -410,13 +419,15 @@ export const replaceNode = (
   id: NodeId,
   newNode: TypeNode
 ): TypeNode => {
-  const newRoot = JSON.parse(JSON.stringify(root));
-  traverse(newRoot, (t) => {
+  if (root.nodeId === id) {
+    return newNode;
+  }
+  return mapType(root, (t) => {
     if (t.nodeId === id) {
-      Object.assign(t, newNode);
+      return newNode;
     }
+    return t;
   });
-  return newRoot;
 };
 
 export const printTypeNode = (t: TypeNode): string => {

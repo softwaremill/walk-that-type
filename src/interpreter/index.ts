@@ -4,6 +4,7 @@ import { mapASTToTypeNodes } from "./mapASTToTypeNodes";
 import { Result, err } from "this-is-ok/result";
 
 export type TypeDeclaration = Extract<TypeNode, { _type: "typeDeclaration" }>;
+export type ConditionalType = Extract<TypeNode, { _type: "conditionalType" }>;
 
 export const createTypeToEval = (
   sourceCode: string

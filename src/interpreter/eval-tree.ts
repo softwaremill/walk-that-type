@@ -17,6 +17,7 @@ import { extendsType } from "./extendsType";
 import { evalType } from "./eval";
 
 export type InferMapping = { [variableName: string]: TypeNode };
+
 const isLeafType = (
   type: TypeNode
 ): type is Extract<
@@ -62,6 +63,7 @@ export type EvalStep = {
   result: TypeNode;
   resultEnv: Environment;
   evalTrace: EvalTrace;
+  inferMapping?: InferMapping;
 };
 
 export type EvalTrace = [TypeNode, ...EvalStep[]];
@@ -111,16 +113,37 @@ const calculateNextStep = (
         const rhs = evalType(env, tt.extendsType).ok().bind();
 
         const result = extendsType(env, lhs, rhs);
-        console.log({ lhs, rhs, result });
 
         const evaluatedThenType = result.extends ? tt.thenType : tt.elseType;
         const newEnv = extendEnvironment(env, result.inferredTypes);
+
+        const updated = mapType(evaluatedThenType, (tt) => {
+          if (
+            tt._type === "typeReference" &&
+            Object.keys(result.inferredTypes).includes(tt.name)
+          ) {
+            let replacingType = lookupType(newEnv, tt.name).expect(
+              "should have this type"
+            );
+            while (replacingType.type._type === "typeReference") {
+              replacingType = lookupType(
+                newEnv,
+                replacingType.type.name
+              ).expect("should have this type");
+            }
+            return replacingType.type;
+          } else {
+            return tt;
+          }
+        });
+
         return some({
           nodeToEval: targetNodeId,
-          result: replaceNode(type, targetNodeId, evaluatedThenType),
-          resultEnv: newEnv,
-          evalTrace: getEvalTrace(evaluatedThenType, newEnv),
-        });
+          result: replaceNode(type, targetNodeId, updated),
+          resultEnv: env,
+          evalTrace: [replaceNode(type, targetNodeId, updated)] as EvalTrace,
+          inferMapping: result.inferredTypes,
+        } as EvalStep);
       });
     })
     .with(P.shape({ _type: "typeReference" }).select(), (tt) => {
@@ -158,7 +181,7 @@ const calculateNextStep = (
         nodeToEval: targetNodeId,
         result: replaceNode(type, targetNodeId, updated),
         resultEnv: newEnv,
-        evalTrace: getEvalTrace(typeDeclaration.type, newEnv),
+        evalTrace: [replaceNode(type, targetNodeId, updated)] as EvalTrace,
       });
     })
     .otherwise(() => {

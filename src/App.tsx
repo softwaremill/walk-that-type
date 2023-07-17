@@ -1,4 +1,4 @@
-import { Box, Flex, Stack, Text } from "@mantine/core";
+import { Box, Divider, Flex, Space, Stack, Text } from "@mantine/core";
 import { Prism } from "@mantine/prism";
 
 import { RichTextEditor } from "@mantine/tiptap";
@@ -61,6 +61,9 @@ function App() {
               errorMessage={typeof env === "string" ? env : undefined}
             />
           </Stack>
+        </Stack>
+        <Space w="4rem" />
+        <Stack w="100%">
           <Stack>
             <p>Type to evaluate</p>
             <CodeEditor
@@ -75,9 +78,9 @@ function App() {
               }
             />
           </Stack>
+          <Divider mb={"md"} />
+          {trace && renderTrace(trace)}
         </Stack>
-
-        <Stack w="100%">{trace && renderTrace(trace)}</Stack>
       </Flex>
     </Stack>
   );
@@ -101,6 +104,18 @@ function renderTrace(trace: EvalTrace) {
           </Accordion> */}
           {/* <pre>{JSON.stringify(step.resultEnv, null, 2)}</pre> */}
 
+          {step.inferMapping && Object.values(step.inferMapping).length > 0 && (
+            <Stack mt={8} w="full" align="center">
+              <Text>Inferred types:</Text>
+              {Object.entries(step.inferMapping).map(([k, v]) => (
+                <Box>
+                  <Text>{`${k} -> ${printTypeNode(
+                    v._type === "typeDeclaration" ? v.type : v
+                  )}`}</Text>
+                </Box>
+              ))}
+            </Stack>
+          )}
           <Prism language="typescript" noCopy>
             {printTypeNode(step.result)}
           </Prism>
