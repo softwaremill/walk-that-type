@@ -1,4 +1,9 @@
 import { Prism, PrismTheme } from "@mantine/prism";
+import { useEffect, useState } from "react";
+import tsParser from "prettier/plugins/typescript";
+import prettier from "prettier/standalone";
+// @ts-expect-error: works 🤷‍♂️
+import prettierPluginEstree from "prettier/plugins/estree";
 
 const theme: PrismTheme = {
   plain: {
@@ -100,8 +105,29 @@ const theme: PrismTheme = {
   ],
 };
 
-export const CodeBlock = ({ code }: { code: string }) => (
-  <Prism language="typescript" noCopy radius={"md"} getPrismTheme={() => theme}>
-    {code}
-  </Prism>
-);
+const withTypeDeclaration = (code: string) => `type _dummy = ${code}`;
+const withoutTypeDeclaration = (code: string) =>
+  code.split("type _dummy = ")[1];
+
+export const CodeBlock = ({ code }: { code: string }) => {
+  const [formattedCode, setFormattedCode] = useState<string | null>(null);
+  useEffect(() => {
+    prettier
+      .format(withTypeDeclaration(code), {
+        parser: "typescript",
+        plugins: [tsParser, prettierPluginEstree],
+      })
+      .then((formatted) => setFormattedCode(withoutTypeDeclaration(formatted)));
+  }, [code]);
+
+  return formattedCode ? (
+    <Prism
+      language="typescript"
+      noCopy
+      radius={"md"}
+      getPrismTheme={() => theme}
+    >
+      {formattedCode}
+    </Prism>
+  ) : null;
+};

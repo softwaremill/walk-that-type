@@ -48,7 +48,7 @@ function App() {
   }, [typeToEval, env]);
 
   return (
-    <Stack px={32} w="100%" mih={"100vh"} mah={"100vh"}>
+    <Stack p={32} w="100%" mih={"100vh"} mah={"100vh"}>
       <Title>walk-that-type 0.1.0</Title>
 
       <Divider mb="md" />
