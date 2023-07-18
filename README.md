@@ -1,5 +1,6 @@
 # TODOs:
 
+- [ ] format displayed code
 - [x] primitive types
 - [x] use Result instead of Option for error info
 - [x] spread operator for tuples (eg. used for concat)

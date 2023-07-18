@@ -1,12 +1,22 @@
-import { Box, Divider, Flex, Space, Stack, Text } from "@mantine/core";
-import { Prism } from "@mantine/prism";
+import {
+  Box,
+  Code,
+  Divider,
+  Flex,
+  Grid,
+  Space,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+
+import { lowlight } from "lowlight";
+import tsLanguageSyntax from "highlight.js/lib/languages/typescript";
 
 import { RichTextEditor } from "@mantine/tiptap";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import { lowlight } from "lowlight";
-import tsLanguageSyntax from "highlight.js/lib/languages/typescript";
 import { useTypedDispatch, useTypedSelector } from "./store";
 import {
   INITIAL_ENV,
@@ -16,10 +26,11 @@ import {
 } from "./reducer";
 import { printTypeNode } from "./interpreter/TypeNode";
 import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
-import { useMemo } from "react";
-import { Accordion } from "@mantine/core";
+import { Fragment, useMemo } from "react";
+// import { Accordion } from "@mantine/core";
+import { P, match } from "ts-pattern";
+import { CodeBlock } from "./components/CodeBlock";
 
-// register languages that your are planning to use
 lowlight.registerLanguage("ts", tsLanguageSyntax);
 
 function App() {
@@ -37,22 +48,15 @@ function App() {
   }, [typeToEval, env]);
 
   return (
-    <Stack p={32} w="100%" mih={"100vh"}>
-      <Flex
-        sx={{
-          fontFamily: "monospace",
-          fontSize: 24,
-          borderBottom: "solid 2px black",
-        }}
-        pb={32}
-      >
-        walk-that-type 0.0.1
-      </Flex>
+    <Stack px={32} w="100%" mih={"100vh"} mah={"100vh"}>
+      <Title>walk-that-type 0.1.0</Title>
 
-      <Flex w="100%">
-        <Stack w="100%">
+      <Divider mb="md" />
+
+      <Grid grow gutter="lg" mah="100%">
+        <Grid.Col span={4}>
           <Stack>
-            <p>Environment editor</p>
+            <Title order={3}>Environment editor</Title>
             <CodeEditor
               initialCode={INITIAL_ENV}
               onCodeUpdate={(env) => {
@@ -61,26 +65,38 @@ function App() {
               errorMessage={typeof env === "string" ? env : undefined}
             />
           </Stack>
-        </Stack>
-        <Space w="4rem" />
-        <Stack w="100%">
-          <Stack>
-            <p>Type to evaluate</p>
-            <CodeEditor
-              initialCode={INITIAL_TYPE_TO_EVAL}
-              onCodeUpdate={(t) => {
-                dispatch(setTypeToEvalSourceCode(t));
-              }}
-              errorMessage={
-                !typeToEval
-                  ? "ERROR: something wrong with this type"
-                  : undefined
-              }
-            />
+        </Grid.Col>
+
+        <Grid.Col span={8} mah="85vh">
+          <Stack mah="100%">
+            <Stack>
+              <Title order={3}>Type to evaluate</Title>
+              <CodeEditor
+                initialCode={INITIAL_TYPE_TO_EVAL}
+                onCodeUpdate={(t) => {
+                  dispatch(setTypeToEvalSourceCode(t));
+                }}
+                errorMessage={
+                  !typeToEval
+                    ? "ERROR: something wrong with this type"
+                    : undefined
+                }
+              />
+            </Stack>
+
+            <Divider mb={"md"} />
+
+            <Stack mah="100%" sx={{ overflowY: "auto" }}>
+              {trace && renderTrace(trace)}
+            </Stack>
           </Stack>
-          <Divider mb={"md"} />
-          {trace && renderTrace(trace)}
-        </Stack>
+        </Grid.Col>
+      </Grid>
+
+      <Flex pos={"fixed"} bottom={16} w="100%" justify="center">
+        <Text size={14} color="gray.7">
+          Made in 🇵🇱 by Mieszko Sabo
+        </Text>
       </Flex>
     </Stack>
   );
@@ -90,12 +106,10 @@ function renderTrace(trace: EvalTrace) {
   const [initialType, ...steps] = trace;
 
   return (
-    <Stack>
-      <Prism language="typescript" noCopy>
-        {printTypeNode(initialType)}
-      </Prism>
-      {steps.map((step) => (
-        <>
+    <Stack mah="100%">
+      <CodeBlock code={printTypeNode(initialType)} />
+      {steps.map((step, idx) => (
+        <Fragment key={`${step.result.nodeId}-${idx}`}>
           {/* <Accordion>
             <Accordion.Item value="expand">
               <Accordion.Control>Expand</Accordion.Control>
@@ -104,22 +118,67 @@ function renderTrace(trace: EvalTrace) {
           </Accordion> */}
           {/* <pre>{JSON.stringify(step.resultEnv, null, 2)}</pre> */}
 
-          {step.inferMapping && Object.values(step.inferMapping).length > 0 && (
-            <Stack mt={8} w="full" align="center">
-              <Text>Inferred types:</Text>
-              {Object.entries(step.inferMapping).map(([k, v]) => (
-                <Box>
-                  <Text>{`${k} -> ${printTypeNode(
-                    v._type === "typeDeclaration" ? v.type : v
-                  )}`}</Text>
-                </Box>
-              ))}
-            </Stack>
-          )}
-          <Prism language="typescript" noCopy>
-            {printTypeNode(step.result)}
-          </Prism>
-        </>
+          {match(step.evalDescription)
+            .with(
+              {
+                _type: "conditionalType",
+                condition: "then",
+                inferredTypes: P.not(P.nullish).select(),
+              },
+              (inferredTypes) => (
+                <Stack mt={8} w="full" align="center">
+                  <Text>Evaluating conditional type</Text>
+                  <Text>Extends with inferred types:</Text>
+                  {Object.entries(inferredTypes).map(([k, v]) => (
+                    <Box>
+                      <Text>{`${k} -> ${printTypeNode(
+                        v._type === "typeDeclaration" ? v.type : v
+                      )}`}</Text>
+                    </Box>
+                  ))}
+                </Stack>
+              )
+            )
+            .with(
+              {
+                _type: "conditionalType",
+                condition: "then",
+              },
+              () => (
+                <Stack mt={8} w="full" align="center">
+                  <Text>Evaluating conditional type</Text>
+                  <Text>Extends</Text>
+                </Stack>
+              )
+            )
+            .with(
+              {
+                _type: "conditionalType",
+                condition: "else",
+              },
+              () => (
+                <Stack mt={8} w="full" align="center">
+                  <Text>Evaluating conditional type</Text>
+                  <Text>Doesn't extend</Text>
+                </Stack>
+              )
+            )
+            .with(
+              {
+                _type: "substituteWithDefinition",
+                name: P.select(),
+              },
+              (name) => (
+                <Stack mt={8} w="full" align="center">
+                  <Text>
+                    Substituting <Code>{name}</Code> with the definition
+                  </Text>
+                </Stack>
+              )
+            )
+            .exhaustive()}
+          <CodeBlock code={printTypeNode(step.result)} />
+        </Fragment>
       ))}
     </Stack>
   );

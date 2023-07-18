@@ -63,7 +63,14 @@ export type EvalStep = {
   result: TypeNode;
   resultEnv: Environment;
   evalTrace: EvalTrace;
-  inferMapping?: InferMapping;
+  evalDescription:
+    | { _type: "conditionalType"; condition: "then" | "else" }
+    | {
+        _type: "conditionalType";
+        condition: "then";
+        inferredTypes: InferMapping;
+      }
+    | { _type: "substituteWithDefinition"; name: string };
 };
 
 export type EvalTrace = [TypeNode, ...EvalStep[]];
@@ -137,12 +144,22 @@ const calculateNextStep = (
           }
         });
 
+        const hasInferredTypes = Object.keys(result.inferredTypes).length > 0;
+
         return some({
           nodeToEval: targetNodeId,
           result: replaceNode(type, targetNodeId, updated),
           resultEnv: env,
           evalTrace: [replaceNode(type, targetNodeId, updated)] as EvalTrace,
-          inferMapping: result.inferredTypes,
+          evalDescription: result.extends
+            ? {
+                _type: "conditionalType",
+                condition: "then",
+                inferredTypes: hasInferredTypes
+                  ? result.inferredTypes
+                  : undefined,
+              }
+            : { _type: "conditionalType", condition: "else" },
         } as EvalStep);
       });
     })
@@ -182,7 +199,11 @@ const calculateNextStep = (
         result: replaceNode(type, targetNodeId, updated),
         resultEnv: newEnv,
         evalTrace: [replaceNode(type, targetNodeId, updated)] as EvalTrace,
-      });
+        evalDescription: {
+          _type: "substituteWithDefinition",
+          name: typeDeclaration.name,
+        },
+      } as EvalStep);
     })
     .otherwise(() => {
       throw new Error("unimplemented");
