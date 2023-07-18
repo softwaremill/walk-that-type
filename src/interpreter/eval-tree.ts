@@ -64,10 +64,17 @@ export type EvalStep = {
   resultEnv: Environment;
   evalTrace: EvalTrace;
   evalDescription:
-    | { _type: "conditionalType"; condition: "then" | "else" }
     | {
         _type: "conditionalType";
-        condition: "then";
+        checkType: TypeNode;
+        extendsType: TypeNode;
+        extends: boolean;
+      }
+    | {
+        _type: "conditionalType";
+        checkType: TypeNode;
+        extendsType: TypeNode;
+        extends: true;
         inferredTypes: InferMapping;
       }
     | { _type: "substituteWithDefinition"; name: string };
@@ -154,12 +161,19 @@ const calculateNextStep = (
           evalDescription: result.extends
             ? {
                 _type: "conditionalType",
-                condition: "then",
+                extends: true,
+                checkType: tt.checkType,
+                extendsType: tt.extendsType,
                 inferredTypes: hasInferredTypes
                   ? result.inferredTypes
                   : undefined,
               }
-            : { _type: "conditionalType", condition: "else" },
+            : {
+                _type: "conditionalType",
+                checkType: tt.checkType,
+                extendsType: tt.extendsType,
+                extends: false,
+              },
         } as EvalStep);
       });
     })

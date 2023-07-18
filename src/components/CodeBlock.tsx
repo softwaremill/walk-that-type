@@ -125,6 +125,7 @@ export const CodeBlock = ({ code }: { code: string }) => {
       language="typescript"
       noCopy
       radius={"md"}
+      sx={{ boxShadow: "0px 6px 12px -6px rgba(0, 0, 0, 0.1)" }}
       getPrismTheme={() => theme}
     >
       {formattedCode}
