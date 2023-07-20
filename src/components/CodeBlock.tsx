@@ -1,9 +1,6 @@
 import { Prism, PrismTheme } from "@mantine/prism";
 import { useEffect, useState } from "react";
-import tsParser from "prettier/plugins/typescript";
-import prettier from "prettier/standalone";
-// @ts-expect-error: works 🤷‍♂️
-import prettierPluginEstree from "prettier/plugins/estree";
+import { formatCode } from "../utils/formatCode";
 
 const theme: PrismTheme = {
   plain: {
@@ -112,12 +109,9 @@ const withoutTypeDeclaration = (code: string) =>
 export const CodeBlock = ({ code }: { code: string }) => {
   const [formattedCode, setFormattedCode] = useState<string | null>(null);
   useEffect(() => {
-    prettier
-      .format(withTypeDeclaration(code), {
-        parser: "typescript",
-        plugins: [tsParser, prettierPluginEstree],
-      })
-      .then((formatted) => setFormattedCode(withoutTypeDeclaration(formatted)));
+    formatCode(withTypeDeclaration(code)).then((formatted) =>
+      setFormattedCode(withoutTypeDeclaration(formatted))
+    );
   }, [code]);
 
   return formattedCode ? (
@@ -126,6 +120,7 @@ export const CodeBlock = ({ code }: { code: string }) => {
       noCopy
       radius={"md"}
       sx={{ boxShadow: "0px 6px 12px -6px rgba(0, 0, 0, 0.1)" }}
+      styles={{ code: { fontSize: 14 } }}
       getPrismTheme={() => theme}
     >
       {formattedCode}
