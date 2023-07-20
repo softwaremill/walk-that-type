@@ -91,16 +91,19 @@ const chooseNodeToEval = (node: TypeNode): Option<NodeId> => {
     .with({ _type: "array" }, (t) => chooseNodeToEval(t.elementType))
     .with({ _type: "tuple" }, (t) => {
       const el = t.elements.find((e) => !isLeafType(e));
-      return el ? some(el.nodeId) : none;
+      return el ? chooseNodeToEval(el) : none;
     })
     .with({ _type: "typeDeclaration" }, () => {
-      throw new Error("this shouldn't happen");
+      throw new Error(`this shouldn't happen: ${node} in chooseNodeToEval`);
     })
     .with({ _type: "conditionalType" }, (t) => {
       return some(t.nodeId);
     })
     .with({ _type: "typeReference" }, (t) => some(t.nodeId))
-    .otherwise(() => none);
+    .otherwise(() => {
+      console.warn("???", node);
+      return none;
+    });
 };
 
 const calculateNextStep = (
@@ -224,7 +227,7 @@ const calculateNextStep = (
     });
 };
 
-const EVAL_LIMIT = 10_000;
+const EVAL_LIMIT = 1_000;
 
 export const getEvalTrace = (
   startingType: TypeNode,

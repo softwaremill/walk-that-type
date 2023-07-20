@@ -13,16 +13,15 @@ import { enableReactUse } from "@legendapp/state/config/enableReactUse";
 import { useSelector } from "@legendapp/state/react";
 import { createEnvironment } from "./interpreter/environment";
 import { createTypeToEval } from "./interpreter";
-import { Do, some } from "this-is-ok/option";
+import { some, Do, none } from "this-is-ok/option";
 import { formatCode } from "./utils/formatCode";
 
 enableReactUse();
 enableLegendStateReact();
 
 const state = observable({
-  envSource:
-    "type Last<T extends any> = T extends [infer L] ? L : T extends [infer _, ...infer Rest] ? Last<Rest> : never;",
-  typeSource: "Last<[1, 2, 3]>",
+  envSource: "type Singleton<T> = [T]",
+  typeSource: "[Singleton<1>]",
 });
 
 const App = () => {
@@ -32,7 +31,13 @@ const App = () => {
     Do(() => {
       const env = createEnvironment(envSource).bind();
       const typeToEval = createTypeToEval(typeSource).bind();
-      return some(getEvalTrace(typeToEval, env));
+      try {
+        const trace = getEvalTrace(typeToEval, env);
+        return some(trace);
+      } catch (e) {
+        console.error(e);
+        return none;
+      }
     })
   );
 

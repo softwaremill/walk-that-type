@@ -318,8 +318,12 @@ export const mapType = (
       return f(type);
 
     case "tuple": {
-      const elements = type.elements.map((el) => mapType(el, f));
+      const result = f(type);
+      if (result !== type) {
+        return result;
+      }
 
+      const elements = type.elements.map((el) => mapType(el, f));
       return {
         ...type,
         elements,
@@ -336,6 +340,10 @@ export const mapType = (
       if (type.typeArguments.length === 0) {
         return f(type);
       } else {
+        const res = f(type);
+        if (res !== type) {
+          return res;
+        }
         const typeArguments = type.typeArguments.map((a) => mapType(a, f));
         return {
           ...type,
