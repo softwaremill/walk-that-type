@@ -1,41 +1,40 @@
-import { Divider, Flex, Grid, Stack, Text, Title } from "@mantine/core";
+import { Button, Divider, Flex, Grid, Stack, Text, Title } from "@mantine/core";
 
-import { lowlight } from "lowlight";
-import tsLanguageSyntax from "highlight.js/lib/languages/typescript";
-
-import { RichTextEditor } from "@mantine/tiptap";
-import { useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import { useTypedDispatch, useTypedSelector } from "./store";
-import {
-  INITIAL_ENV,
-  INITIAL_TYPE_TO_EVAL,
-  setEnvSourceCode,
-  setTypeToEvalSourceCode,
-} from "./reducer";
 import { printTypeNode } from "./interpreter/TypeNode";
 import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
-import { Fragment, useMemo } from "react";
+import { Fragment } from "react";
 // import { Accordion } from "@mantine/core";
 import { CodeBlock } from "./components/CodeBlock";
 import { EvalDescription } from "./components/EvalDescription";
+import { enableLegendStateReact } from "@legendapp/state/react";
+import { observable } from "@legendapp/state";
+import { CodeEditor } from "./components/CodeEditor";
+import { enableReactUse } from "@legendapp/state/config/enableReactUse";
+import { useSelector } from "@legendapp/state/react";
+import { createEnvironment } from "./interpreter/environment";
+import { createTypeToEval } from "./interpreter";
+import { Do, some } from "this-is-ok/option";
+import { formatCode } from "./utils/formatCode";
 
-lowlight.registerLanguage("ts", tsLanguageSyntax);
+enableReactUse();
+enableLegendStateReact();
 
-function App() {
-  const dispatch = useTypedDispatch();
-  const typeToEval = useTypedSelector((s) => s.app.currentlyEvaledType);
-  const env = useTypedSelector((s) => s.app.env);
+const state = observable({
+  envSource:
+    "type Last<T extends any> = T extends [infer L] ? L : T extends [infer _, ...infer Rest] ? Last<Rest> : never;",
+  typeSource: "Last<[1, 2, 3]>",
+});
 
-  const trace = useMemo(() => {
-    if (typeToEval && typeof env !== "string") {
-      console.log("evaluating", typeToEval, env);
-      return getEvalTrace(typeToEval, env);
-    } else {
-      return null;
-    }
-  }, [typeToEval, env]);
+const App = () => {
+  const envSource = state.envSource.use();
+  const typeSource = state.typeSource.use();
+  const trace = useSelector(() =>
+    Do(() => {
+      const env = createEnvironment(envSource).bind();
+      const typeToEval = createTypeToEval(typeSource).bind();
+      return some(getEvalTrace(typeToEval, env));
+    })
+  );
 
   return (
     <Stack p={32} w="100%" mih={"100vh"} mah={"100vh"}>
@@ -49,13 +48,27 @@ function App() {
             <Title color="#35545a" order={3}>
               Environment editor
             </Title>
+
             <CodeEditor
-              initialCode={INITIAL_ENV}
-              onCodeUpdate={(env) => {
-                dispatch(setEnvSourceCode(env));
+              code={envSource}
+              onCodeUpdate={(t) => {
+                state.envSource.set(t);
               }}
-              errorMessage={typeof env === "string" ? env : undefined}
             />
+            <Flex w="100%" justify="flex-end">
+              <Button
+                variant="light"
+                color="cyan"
+                compact
+                onClick={() => {
+                  formatCode(envSource).then((formatted) => {
+                    state.envSource.set(formatted);
+                  });
+                }}
+              >
+                Format
+              </Button>
+            </Flex>
           </Stack>
         </Grid.Col>
 
@@ -66,22 +79,17 @@ function App() {
                 Type to evaluate
               </Title>
               <CodeEditor
-                initialCode={INITIAL_TYPE_TO_EVAL}
+                code={typeSource}
                 onCodeUpdate={(t) => {
-                  dispatch(setTypeToEvalSourceCode(t));
+                  state.typeSource.set(t);
                 }}
-                errorMessage={
-                  !typeToEval
-                    ? "ERROR: something wrong with this type"
-                    : undefined
-                }
               />
             </Stack>
 
             <Divider color="#b2cdd2" mb={"md"} />
 
             <Stack mah="100%" sx={{ overflowY: "auto" }}>
-              {trace && renderTrace(trace)}
+              {trace.isSome && renderTrace(trace.value)}
             </Stack>
           </Stack>
         </Grid.Col>
@@ -94,7 +102,7 @@ function App() {
       </Flex>
     </Stack>
   );
-}
+};
 
 function renderTrace(trace: EvalTrace) {
   const [initialType, ...steps] = trace;
@@ -121,53 +129,3 @@ function renderTrace(trace: EvalTrace) {
 }
 
 export default App;
-
-export type CodeEditorProps = {
-  onCodeUpdate: (code: string) => void;
-  errorMessage?: string;
-  initialCode: string;
-};
-
-function CodeEditor({
-  onCodeUpdate,
-  errorMessage,
-  initialCode,
-}: CodeEditorProps) {
-  const editor = useEditor(
-    {
-      extensions: [
-        StarterKit,
-        CodeBlockLowlight.configure({
-          lowlight,
-          defaultLanguage: "typescript",
-        }),
-      ],
-      content: `<pre><code>${initialCode}</code></pre>`,
-      onUpdate: ({ editor, transaction }) => {
-        const currentContent = transaction.doc.textContent;
-        if (!transaction.doc.toString().includes("codeBlock")) {
-          editor.commands.setContent(
-            "<pre><code>" + currentContent + "</code></pre>"
-          );
-        }
-        onCodeUpdate(currentContent);
-      },
-    },
-    [initialCode]
-  );
-
-  return (
-    <Stack>
-      <RichTextEditor
-        editor={editor}
-        sx={(theme) => ({
-          border: errorMessage ? `2px solid ${theme.colors.red[9]}` : "none",
-        })}
-        p={0}
-      >
-        <RichTextEditor.Content p={0} />
-      </RichTextEditor>
-      {errorMessage && <Text color="red.9">{errorMessage}</Text>}
-    </Stack>
-  );
-}
