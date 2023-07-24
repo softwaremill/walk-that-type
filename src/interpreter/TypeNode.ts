@@ -396,6 +396,9 @@ export const mapType = (
 };
 
 export const findTypeNodeById = (t: TypeNode, id: NodeId): Option<TypeNode> => {
+  if (t.nodeId === id) {
+    return some(t);
+  }
   let result: Option<TypeNode> = none;
   traverse(t, (t) => {
     if (t.nodeId === id) {

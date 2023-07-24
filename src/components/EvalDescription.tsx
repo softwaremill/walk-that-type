@@ -28,6 +28,7 @@ export const EvalDescription = ({
           {match(desc._type)
             .with("conditionalType", () => `Conditional type`)
             .with("substituteWithDefinition", () => `Definition Substitution`)
+            .with("applyRestOperator", () => `Apply rest operator`)
             .exhaustive()}
         </Title>
 
@@ -108,6 +109,17 @@ export const EvalDescription = ({
             (name) => (
               <Text color="gray.6" size={13}>
                 Substituting <Code>{name}</Code> with the definition.
+              </Text>
+            )
+          )
+          .with(
+            {
+              _type: "applyRestOperator",
+              restElement: P.select(),
+            },
+            (restEl) => (
+              <Text color="gray.6" size={13}>
+                Applying rest operator to <Code>{printTypeNode(restEl)}</Code>.
               </Text>
             )
           )

@@ -20,8 +20,8 @@ enableReactUse();
 enableLegendStateReact();
 
 const state = observable({
-  envSource: "type Singleton<T> = [T]",
-  typeSource: "[Singleton<1>]",
+  envSource: "type Concat<A extends any[], B extends any[]> = [...A, ...B];",
+  typeSource: "Concat<[1, 2], Concat<[3, 4], [1, 2, 3]>>;",
 });
 
 const App = () => {

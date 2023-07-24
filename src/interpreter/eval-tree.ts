@@ -15,6 +15,7 @@ import {
 import { P, match } from "ts-pattern";
 import { extendsType } from "./extendsType";
 import { evalType } from "./eval";
+import { v4 as uuid } from "uuid";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 
@@ -77,7 +78,8 @@ export type EvalStep = {
         extends: true;
         inferredTypes: InferMapping;
       }
-    | { _type: "substituteWithDefinition"; name: string };
+    | { _type: "substituteWithDefinition"; name: string }
+    | { _type: "applyRestOperator"; restElement: TypeNode };
 };
 
 export type EvalTrace = [TypeNode, ...EvalStep[]];
@@ -91,6 +93,19 @@ const chooseNodeToEval = (node: TypeNode): Option<NodeId> => {
     .with({ _type: "array" }, (t) => chooseNodeToEval(t.elementType))
     .with({ _type: "tuple" }, (t) => {
       const el = t.elements.find((e) => !isLeafType(e));
+      if (el) {
+        if (el._type === "rest") {
+          if (el.type._type === "tuple") {
+            return some(node.nodeId);
+          }
+          const nodeToEvalInRest = chooseNodeToEval(el.type);
+          if (nodeToEvalInRest.isSome) {
+            return chooseNodeToEval(el.type);
+          } else {
+            return some(node.nodeId);
+          }
+        }
+      }
       return el ? chooseNodeToEval(el) : none;
     })
     .with({ _type: "typeDeclaration" }, () => {
@@ -114,15 +129,43 @@ const calculateNextStep = (
   const nodeToEval = findTypeNodeById(type, targetNodeId).expect(
     "targetNodeId was not found in type"
   );
-
   return match(nodeToEval)
     .returnType<Option<EvalStep>>()
     .when(
       (t) => isLeafType(t),
       () => none
     )
-    .with({ _type: P.union("array", "tuple", "typeDeclaration") }, () => {
+    .with({ _type: P.union("array", "typeDeclaration") }, () => {
       throw new Error("this shouldn't happen");
+    })
+    .with(P.shape({ _type: "tuple" }).select(), (tt) => {
+      const restEl = tt.elements.find((e) => e._type === "rest") as
+        | Extract<TypeNode, { _type: "rest" }>
+        | undefined;
+      if (!restEl) {
+        return none;
+      }
+
+      const newElements = tt.elements.flatMap((el) =>
+        el.nodeId === restEl.nodeId
+          ? restEl.type._type === "tuple"
+            ? restEl.type.elements
+            : []
+          : el
+      );
+
+      const updatedTuple = { ...tt, elements: newElements };
+
+      return some({
+        nodeToEval: targetNodeId,
+        result: replaceNode(type, targetNodeId, updatedTuple),
+        resultEnv: env,
+        evalTrace: [replaceNode(type, targetNodeId, updatedTuple)] as EvalTrace,
+        evalDescription: {
+          _type: "applyRestOperator",
+          restElement: restEl,
+        },
+      } as EvalStep);
     })
     .with(P.shape({ _type: "conditionalType" }).select(), (tt) => {
       return Do(() => {
@@ -200,12 +243,15 @@ const calculateNextStep = (
           let replacingType = lookupType(newEnv, tt.name).expect(
             "should have this type"
           );
-          while (replacingType.type._type === "typeReference") {
+          while (
+            replacingType.type._type === "typeReference" &&
+            replacingType.type.name !== typeDeclaration.name
+          ) {
             replacingType = lookupType(newEnv, replacingType.type.name).expect(
               "should have this type"
             );
           }
-          return replacingType.type;
+          return { ...replacingType.type, nodeId: uuid() };
         } else {
           return tt;
         }
@@ -223,7 +269,7 @@ const calculateNextStep = (
       } as EvalStep);
     })
     .otherwise(() => {
-      throw new Error("unimplemented");
+      throw new Error(`unimplemented: ${nodeToEval._type}`);
     });
 };
 
