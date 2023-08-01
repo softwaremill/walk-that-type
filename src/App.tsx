@@ -13,7 +13,7 @@ import { enableReactUse } from "@legendapp/state/config/enableReactUse";
 import { useSelector } from "@legendapp/state/react";
 import { createEnvironment } from "./interpreter/environment";
 import { createTypeToEval } from "./interpreter";
-import { some, Do, none } from "this-is-ok/option";
+import { some, Do, none, Option } from "this-is-ok/option";
 import { formatCode } from "./utils/formatCode";
 import { Select } from "@mantine/core";
 
@@ -49,7 +49,7 @@ const state = observable({
 const App = () => {
   const envSource = state.envSource.use();
   const typeSource = state.typeSource.use();
-  const trace = useSelector(() =>
+  const trace = useSelector<Option<EvalTrace>>(() =>
     Do(() => {
       const env = createEnvironment(envSource).bind();
       const typeToEval = createTypeToEval(typeSource).bind();
@@ -72,6 +72,9 @@ const App = () => {
       <Grid grow gutter="lg" mah="100%">
         <Grid.Col span={4}>
           <Stack>
+            <Title color="#35545a" order={3}>
+              Presets
+            </Title>
             <Select
               value={state.currentExampleName.get()}
               onChange={(name) => {
@@ -126,7 +129,7 @@ const App = () => {
               />
             </Stack>
 
-            <Divider color="#b2cdd2" mb={"md"} />
+            <Divider color="#b2cdd2" my={"md"} />
 
             <Stack mah="100%" sx={{ overflowY: "auto" }}>
               {trace.isSome && renderTrace(trace.value)}
