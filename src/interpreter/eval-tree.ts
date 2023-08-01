@@ -92,8 +92,7 @@ const chooseNodeToEval = (node: TypeNode): Option<NodeId> => {
     )
     .with({ _type: "array" }, (t) => chooseNodeToEval(t.elementType))
     .with({ _type: "tuple" }, (t) => {
-      const el = t.elements.find((e) => !isLeafType(e));
-      if (el) {
+      for (const el of t.elements) {
         if (el._type === "rest") {
           if (el.type._type === "tuple") {
             return some(node.nodeId);
@@ -105,8 +104,14 @@ const chooseNodeToEval = (node: TypeNode): Option<NodeId> => {
             return some(node.nodeId);
           }
         }
+
+        const res = chooseNodeToEval(el);
+        if (res.isSome) {
+          return res;
+        }
       }
-      return el ? chooseNodeToEval(el) : none;
+
+      return none;
     })
     .with({ _type: "typeDeclaration" }, () => {
       throw new Error(`this shouldn't happen: ${node} in chooseNodeToEval`);
@@ -154,7 +159,7 @@ const calculateNextStep = (
           : el
       );
 
-      const updatedTuple = { ...tt, elements: newElements };
+      const updatedTuple = { ...tt, elements: newElements, nodeId: uuid() };
 
       return some({
         nodeToEval: targetNodeId,
