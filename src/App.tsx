@@ -15,13 +15,35 @@ import { createEnvironment } from "./interpreter/environment";
 import { createTypeToEval } from "./interpreter";
 import { some, Do, none } from "this-is-ok/option";
 import { formatCode } from "./utils/formatCode";
+import { Select } from "@mantine/core";
 
 enableReactUse();
 enableLegendStateReact();
 
+const EXAMPLES = [
+  {
+    name: "Concat",
+    envSource: "type Concat<A extends any[], B extends any[]> = [...A, ...B];",
+    typeSource: "Concat<[1, 2], Concat<[3, 4], [1, 2, 3]>>;",
+  },
+  {
+    name: "LastRecursive",
+    envSource:
+      "type Last<T extends any[]> = T extends [infer L] ? L : T extends [infer _, ...infer Rest] ? Last<Rest> : never;",
+    typeSource: "Last<[1, 2, 3]>;",
+  },
+  {
+    name: "LastRecursive in tuple",
+    envSource:
+      "type Last<T extends any[]> = T extends [infer L] ? L : T extends [infer _, ...infer Rest] ? Last<Rest> : never;",
+    typeSource: "[Last<[1, 2]>];",
+  },
+];
+
 const state = observable({
-  envSource: "type Concat<A extends any[], B extends any[]> = [...A, ...B];",
-  typeSource: "Concat<[1, 2], Concat<[3, 4], [1, 2, 3]>>;",
+  envSource: EXAMPLES[0].envSource,
+  typeSource: EXAMPLES[0].typeSource,
+  currentExampleName: EXAMPLES[0].name,
 });
 
 const App = () => {
@@ -50,6 +72,19 @@ const App = () => {
       <Grid grow gutter="lg" mah="100%">
         <Grid.Col span={4}>
           <Stack>
+            <Select
+              value={state.currentExampleName.get()}
+              onChange={(name) => {
+                if (name) {
+                  const idx = EXAMPLES.findIndex((e) => e.name === name);
+                  state.envSource.set(EXAMPLES[idx].envSource);
+                  state.typeSource.set(EXAMPLES[idx].typeSource);
+                  state.currentExampleName.set(name);
+                }
+              }}
+              data={EXAMPLES.map((e) => e.name)}
+            />
+
             <Title color="#35545a" order={3}>
               Environment editor
             </Title>

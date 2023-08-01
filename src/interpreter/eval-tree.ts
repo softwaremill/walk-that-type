@@ -14,8 +14,8 @@ import {
 } from "./environment";
 import { P, match } from "ts-pattern";
 import { extendsType } from "./extendsType";
-import { evalType } from "./eval";
 import { v4 as uuid } from "uuid";
+import { evalType } from "./eval";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 
@@ -191,7 +191,7 @@ const calculateNextStep = (
                 replacingType.type.name
               ).expect("should have this type");
             }
-            return replacingType.type;
+            return { ...replacingType.type, nodeId: uuid() };
           } else {
             return tt;
           }

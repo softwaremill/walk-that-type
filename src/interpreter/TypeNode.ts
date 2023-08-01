@@ -302,6 +302,11 @@ export const mapType = (
   type: TypeNode,
   f: (t: TypeNode) => TypeNode
 ): TypeNode => {
+  const result = f(type);
+  if (result !== type) {
+    return result;
+  }
+
   switch (type._type) {
     case "string":
     case "number":
@@ -318,11 +323,6 @@ export const mapType = (
       return f(type);
 
     case "tuple": {
-      const result = f(type);
-      if (result !== type) {
-        return result;
-      }
-
       const elements = type.elements.map((el) => mapType(el, f));
       return {
         ...type,
