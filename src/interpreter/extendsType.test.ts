@@ -29,19 +29,19 @@ describe("extends", () => {
   });
 
   it("literals extends their sets", () => {
-    expect(extendsType(EMPTY_ENV, T.numberLit(42), T.number).extends).toBe(
+    expect(extendsType(EMPTY_ENV, T.numberLit(42), T.number()).extends).toBe(
       true
     );
 
-    expect(extendsType(EMPTY_ENV, T.booleanLit(true), T.boolean).extends).toBe(
+    expect(
+      extendsType(EMPTY_ENV, T.booleanLit(true), T.boolean()).extends
+    ).toBe(true);
+
+    expect(extendsType(EMPTY_ENV, T.stringLit("yo"), T.string()).extends).toBe(
       true
     );
 
-    expect(extendsType(EMPTY_ENV, T.stringLit("yo"), T.string).extends).toBe(
-      true
-    );
-
-    expect(extendsType(EMPTY_ENV, T.stringLit("yo"), T.number).extends).toBe(
+    expect(extendsType(EMPTY_ENV, T.stringLit("yo"), T.number()).extends).toBe(
       false
     );
   });
@@ -50,46 +50,52 @@ describe("extends", () => {
     // based on: https://www.typescriptlang.org/docs/handbook/type-compatibility.html#any-unknown-object-void-undefined-null-and-never-assignability
 
     // ANY
-    expect(extendsType(EMPTY_ENV, T.any, T.unknown).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.any, T.void).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.any, T.undefined).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.any, T.null).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.any, T.never).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.any(), T.unknown()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.any(), T.void()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.any(), T.undefined()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.any(), T.null()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.any(), T.never()).extends).toBe(false);
 
     // UNKNOWN
-    expect(extendsType(EMPTY_ENV, T.unknown, T.any).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.unknown, T.void).extends).toBe(false);
-    expect(extendsType(EMPTY_ENV, T.unknown, T.undefined).extends).toBe(false);
-    expect(extendsType(EMPTY_ENV, T.unknown, T.null).extends).toBe(false);
-    expect(extendsType(EMPTY_ENV, T.unknown, T.never).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.unknown(), T.any()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.unknown(), T.void()).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.unknown(), T.undefined()).extends).toBe(
+      false
+    );
+    expect(extendsType(EMPTY_ENV, T.unknown(), T.null()).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.unknown(), T.never()).extends).toBe(false);
 
     // VOID
-    expect(extendsType(EMPTY_ENV, T.void, T.any).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.void, T.unknown).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.void, T.undefined).extends).toBe(false);
-    expect(extendsType(EMPTY_ENV, T.void, T.null).extends).toBe(false);
-    expect(extendsType(EMPTY_ENV, T.void, T.never).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.void(), T.any()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.void(), T.unknown()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.void(), T.undefined()).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.void(), T.null()).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.void(), T.never()).extends).toBe(false);
 
     // UNDEFINED
-    expect(extendsType(EMPTY_ENV, T.undefined, T.any).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.undefined, T.unknown).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.undefined, T.void).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.undefined, T.null).extends).toBe(false);
-    expect(extendsType(EMPTY_ENV, T.undefined, T.never).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.undefined(), T.any()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.undefined(), T.unknown()).extends).toBe(
+      true
+    );
+    expect(extendsType(EMPTY_ENV, T.undefined(), T.void()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.undefined(), T.null()).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.undefined(), T.never()).extends).toBe(
+      false
+    );
 
     // NULL
-    expect(extendsType(EMPTY_ENV, T.null, T.any).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.null, T.unknown).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.null, T.void).extends).toBe(false);
-    expect(extendsType(EMPTY_ENV, T.null, T.undefined).extends).toBe(false);
-    expect(extendsType(EMPTY_ENV, T.null, T.never).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.null(), T.any()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.null(), T.unknown()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.null(), T.void()).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.null(), T.undefined()).extends).toBe(false);
+    expect(extendsType(EMPTY_ENV, T.null(), T.never()).extends).toBe(false);
 
     // NEVER
-    expect(extendsType(EMPTY_ENV, T.never, T.any).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.never, T.unknown).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.never, T.void).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.never, T.undefined).extends).toBe(true);
-    expect(extendsType(EMPTY_ENV, T.never, T.null).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.never(), T.any()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.never(), T.unknown()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.never(), T.void()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.never(), T.undefined()).extends).toBe(true);
+    expect(extendsType(EMPTY_ENV, T.never(), T.null()).extends).toBe(true);
   });
 
   it("should work with tuples", () => {
@@ -107,20 +113,14 @@ describe("extends", () => {
       extendsType(
         EMPTY_ENV,
         exampleTuple,
-        T.tuple([T.number, T.number, T.number, T.string, T.string, T.string])
-      ).extends
-    ).toBe(true);
-
-    expect(
-      extendsType(EMPTY_ENV, exampleTuple, T.tuple([T.number, T.rest(T.any)]))
-        .extends
-    ).toBe(true);
-
-    expect(
-      extendsType(
-        EMPTY_ENV,
-        exampleTuple,
-        T.tuple([T.number, T.rest(T.array(T.any))])
+        T.tuple([
+          T.number(),
+          T.number(),
+          T.number(),
+          T.string(),
+          T.string(),
+          T.string(),
+        ])
       ).extends
     ).toBe(true);
 
@@ -128,7 +128,23 @@ describe("extends", () => {
       extendsType(
         EMPTY_ENV,
         exampleTuple,
-        T.tuple([T.rest(T.array(T.any)), T.number])
+        T.tuple([T.number(), T.rest(T.any())])
+      ).extends
+    ).toBe(true);
+
+    expect(
+      extendsType(
+        EMPTY_ENV,
+        exampleTuple,
+        T.tuple([T.number(), T.rest(T.array(T.any()))])
+      ).extends
+    ).toBe(true);
+
+    expect(
+      extendsType(
+        EMPTY_ENV,
+        exampleTuple,
+        T.tuple([T.rest(T.array(T.any())), T.number()])
       ).extends
     ).toBe(false);
 
@@ -137,11 +153,11 @@ describe("extends", () => {
         EMPTY_ENV,
         exampleTuple,
         T.tuple([
-          T.rest(T.array(T.any)),
-          T.number,
-          T.string,
-          T.string,
-          T.string,
+          T.rest(T.array(T.any())),
+          T.number(),
+          T.string(),
+          T.string(),
+          T.string(),
         ])
       ).extends
     ).toBe(true);
@@ -152,7 +168,7 @@ describe("extends", () => {
       extendsType(
         EMPTY_ENV,
         exampleTuple,
-        T.tuple([T.infer("X"), T.rest(T.array(T.any))])
+        T.tuple([T.infer("X"), T.rest(T.array(T.any()))])
       ).inferredTypes.X
     ).toEqual(T.typeDeclaration("X", [], T.numberLit(1)));
 
@@ -160,7 +176,7 @@ describe("extends", () => {
       extendsType(
         EMPTY_ENV,
         exampleTuple,
-        T.tuple([T.rest(T.array(T.any)), T.infer("X")])
+        T.tuple([T.rest(T.array(T.any())), T.infer("X")])
       ).inferredTypes.X
     ).toEqual(T.typeDeclaration("X", [], T.stringLit("c")));
 
@@ -168,7 +184,7 @@ describe("extends", () => {
       extendsType(
         EMPTY_ENV,
         exampleTuple,
-        T.tuple([T.infer("X"), T.rest(T.array(T.any)), T.infer("Y")])
+        T.tuple([T.infer("X"), T.rest(T.array(T.any())), T.infer("Y")])
       ).inferredTypes
     ).toEqual({
       X: T.typeDeclaration("X", [], T.numberLit(1)),

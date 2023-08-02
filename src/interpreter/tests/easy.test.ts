@@ -63,7 +63,7 @@ test("Concat", () => {
       T.numberLit(2),
       T.stringLit("3"),
       T.booleanLit(false),
-      T.boolean,
+      T.boolean(),
       T.stringLit("4"),
     ])
   );

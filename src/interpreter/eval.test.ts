@@ -7,29 +7,13 @@ export const EMPTY_ENV: Environment = {};
 
 describe("eval", () => {
   test("Literal types", () => {
-    expect(
-      evalType(EMPTY_ENV, {
-        _type: "booleanLiteral",
-        value: true,
-        text: "true",
-      }).unwrap().text
-    ).toBe("true");
+    expect(evalType(EMPTY_ENV, T.booleanLit(true)).unwrap().text).toBe("true");
 
-    expect(
-      evalType(EMPTY_ENV, {
-        _type: "numberLiteral",
-        value: 42,
-        text: "42",
-      }).unwrap().text
-    ).toBe("42");
+    expect(evalType(EMPTY_ENV, T.numberLit(42)).unwrap().text).toBe("42");
 
-    expect(
-      evalType(EMPTY_ENV, {
-        _type: "stringLiteral",
-        value: "hello",
-        text: "hello",
-      }).unwrap().text
-    ).toBe("hello");
+    expect(evalType(EMPTY_ENV, T.stringLit("hello")).unwrap().text).toBe(
+      "hello"
+    );
   });
 
   test("typeReference", () => {
@@ -40,34 +24,12 @@ describe("eval", () => {
     ).unwrap();
 
     expect(
-      evalType(env1, {
-        _type: "typeReference",
-        name: "Z",
-        typeArguments: [
-          {
-            _type: "stringLiteral",
-            value: "yo",
-            text: `"yo"`,
-          },
-        ],
-        text: "Z<'yo'>",
-      }).unwrap().text
+      evalType(env1, T.typeReference("Z", [T.stringLit("yo")])).unwrap().text
     ).toBe('["yo", "yo"]');
 
     expect(
-      evalType(env1, {
-        _type: "typeReference",
-        name: "Z",
-        typeArguments: [
-          {
-            _type: "typeReference",
-            name: "X",
-            typeArguments: [],
-            text: "X",
-          },
-        ],
-        text: "Z<X>",
-      }).unwrap().text
+      evalType(env1, T.typeReference("Z", [T.typeReference("X", [])])).unwrap()
+        .text
     ).toBe("[42, 42]");
   });
 

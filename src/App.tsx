@@ -1,4 +1,4 @@
-import { Button, Divider, Flex, Grid, Stack, Text, Title } from "@mantine/core";
+import { Button, Divider, Flex, Grid, Stack, Title } from "@mantine/core";
 
 import { printTypeNode } from "./interpreter/TypeNode";
 import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
@@ -149,11 +149,11 @@ const App = () => {
         </Grid.Col>
       </Grid>
 
-      <Flex pos={"fixed"} bottom={16} w="100%" justify="center">
+      {/* <Flex pos={"fixed"} bottom={16} w="100%" justify="center">
         <Text size={14} color="gray.7">
           Made in 🇵🇱 by Mieszko Sabo
         </Text>
-      </Flex>
+      </Flex> */}
     </Stack>
   );
 };
