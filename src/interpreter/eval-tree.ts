@@ -63,7 +63,6 @@ export type EvalStep = {
   nodeToEval: NodeId;
   result: TypeNode;
   resultEnv: Environment;
-  evalTrace: EvalTrace;
   evalDescription:
     | {
         _type: "conditionalType";
@@ -78,7 +77,12 @@ export type EvalStep = {
         extends: true;
         inferredTypes: InferMapping;
       }
-    | { _type: "substituteWithDefinition"; name: string }
+    | {
+        _type: "substituteWithDefinition";
+        name: string;
+
+        evalTrace: EvalTrace;
+      }
     | { _type: "applyRestOperator"; restElement: TypeNode };
 };
 
@@ -165,7 +169,6 @@ const calculateNextStep = (
         nodeToEval: targetNodeId,
         result: replaceNode(type, targetNodeId, updatedTuple),
         resultEnv: env,
-        evalTrace: [replaceNode(type, targetNodeId, updatedTuple)] as EvalTrace,
         evalDescription: {
           _type: "applyRestOperator",
           restElement: restEl,
@@ -208,7 +211,6 @@ const calculateNextStep = (
           nodeToEval: targetNodeId,
           result: replaceNode(type, targetNodeId, updated),
           resultEnv: env,
-          evalTrace: [replaceNode(type, targetNodeId, updated)] as EvalTrace,
           evalDescription: result.extends
             ? {
                 _type: "conditionalType",
@@ -262,14 +264,16 @@ const calculateNextStep = (
         }
       });
 
+      const fullyEvaled = evalType(newEnv, typeDeclaration.type).unwrap();
+
       return some({
         nodeToEval: targetNodeId,
-        result: replaceNode(type, targetNodeId, updated),
+        result: replaceNode(type, targetNodeId, fullyEvaled),
         resultEnv: newEnv,
-        evalTrace: [replaceNode(type, targetNodeId, updated)] as EvalTrace,
         evalDescription: {
           _type: "substituteWithDefinition",
-          name: typeDeclaration.name,
+          name: `${tt.text()}`,
+          evalTrace: getEvalTrace(updated, newEnv),
         },
       } as EvalStep);
     })

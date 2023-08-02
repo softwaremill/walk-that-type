@@ -3,7 +3,7 @@ import { Button, Divider, Flex, Grid, Stack, Text, Title } from "@mantine/core";
 import { printTypeNode } from "./interpreter/TypeNode";
 import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
 import { Fragment } from "react";
-// import { Accordion } from "@mantine/core";
+import { Accordion } from "@mantine/core";
 import { CodeBlock } from "./components/CodeBlock";
 import { EvalDescription } from "./components/EvalDescription";
 import { enableLegendStateReact } from "@legendapp/state/react";
@@ -21,6 +21,17 @@ enableReactUse();
 enableLegendStateReact();
 
 const EXAMPLES = [
+  {
+    name: "Reverse",
+    envSource:
+      "type Reverse<T extends any[]> = T extends [infer Head, ...infer Tail] ? [...Reverse<Tail>, Head] : [];",
+    typeSource: "Reverse<[1, 2, 3]>;",
+  },
+  {
+    name: "EvalTrace test",
+    envSource: "type Concat<A extends any[], B extends any[]> = [...A, ...B];",
+    typeSource: "[Concat<[1], [2]>, Concat<[3], [4]>];",
+  },
   {
     name: "Concat",
     envSource: "type Concat<A extends any[], B extends any[]> = [...A, ...B];",
@@ -155,15 +166,19 @@ function renderTrace(trace: EvalTrace) {
       <CodeBlock code={printTypeNode(initialType)} />
       {steps.map((step, idx) => (
         <Fragment key={`${step.result.nodeId}-${idx}`}>
-          {/* <Accordion>
-            <Accordion.Item value="expand">
-              <Accordion.Control>Expand</Accordion.Control>
-              <Accordion.Panel>{renderTrace(step.evalTrace)}</Accordion.Panel>
-            </Accordion.Item>
-          </Accordion> */}
-          {/* <pre>{JSON.stringify(step.resultEnv, null, 2)}</pre> */}
-
           <EvalDescription desc={step.evalDescription} />
+
+          {step.evalDescription._type === "substituteWithDefinition" && (
+            <Accordion>
+              <Accordion.Item value="expand">
+                <Accordion.Control>Step into evaluation</Accordion.Control>
+                <Accordion.Panel>
+                  {renderTrace(step.evalDescription.evalTrace)}
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion>
+          )}
+
           <CodeBlock code={printTypeNode(step.result)} />
         </Fragment>
       ))}
