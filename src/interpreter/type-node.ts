@@ -53,8 +53,6 @@ type TypeNodeBase<T> = T &
 export type TypeNode = TypeNodeBase<{ text: () => string; nodeId: NodeId }>;
 export type TypeNodeWithoutId = TypeNodeBase<{ text: () => string }>;
 
-export type EvaluatedType = { isFullyEvaluated: boolean } & TypeNode;
-
 const typeDeclaration = (
   name: string,
   params: string[],

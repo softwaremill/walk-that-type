@@ -2,7 +2,7 @@ import ts from "typescript";
 import { T, TypeNode } from "./type-node";
 import { Result, err, ok } from "this-is-ok/result";
 
-const sequence = <T, E>(opts: Result<T, E>[]): Result<T[], E> => {
+export const sequence = <T, E>(opts: Result<T, E>[]): Result<T[], E> => {
   const error = opts.find((el) => el.isErr);
   if (error) {
     return err(error.unwrapErr()) as unknown as Result<T[], E>;

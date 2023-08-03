@@ -4,7 +4,6 @@ import { mapASTToTypeNodes } from "./map-AST-to-type-nodes";
 import { Result, err } from "this-is-ok/result";
 
 export type TypeDeclaration = Extract<TypeNode, { _type: "typeDeclaration" }>;
-export type ConditionalType = Extract<TypeNode, { _type: "conditionalType" }>;
 
 export const createTypeToEval = (
   sourceCode: string
@@ -26,5 +25,3 @@ export const createTypeToEval = (
 
   return node;
 };
-
-ts.SyntaxKind;

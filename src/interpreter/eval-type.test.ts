@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { evalType } from "./eval-type";
+import { evalT } from "./eval-type";
 import { Environment, createEnvironment } from "./environment";
 import { T } from "./type-node";
 import { deepEquals } from "./extends-type";
@@ -8,13 +8,13 @@ export const EMPTY_ENV: Environment = {};
 
 describe("eval", () => {
   test("Literal types", () => {
-    expect(evalType(EMPTY_ENV, T.booleanLit(true)).unwrap().text()).toBe(
+    expect(evalT(EMPTY_ENV, T.booleanLit(true)).unwrap().type.text()).toBe(
       "true"
     );
 
-    expect(evalType(EMPTY_ENV, T.numberLit(42)).unwrap().text()).toBe("42");
+    expect(evalT(EMPTY_ENV, T.numberLit(42)).unwrap().type.text()).toBe("42");
 
-    expect(evalType(EMPTY_ENV, T.stringLit("hello")).unwrap().text()).toBe(
+    expect(evalT(EMPTY_ENV, T.stringLit("hello")).unwrap().type.text()).toBe(
       `"hello"`
     );
   });
@@ -27,21 +27,21 @@ describe("eval", () => {
     ).unwrap();
 
     expect(
-      evalType(env1, T.typeReference("Z", [T.stringLit("yo")]))
+      evalT(env1, T.typeReference("Z", [T.stringLit("yo")]))
         .unwrap()
-        .text()
+        .type.text()
     ).toBe('["yo", "yo"]');
 
     expect(
-      evalType(env1, T.typeReference("Z", [T.typeReference("X", [])]))
+      evalT(env1, T.typeReference("Z", [T.typeReference("X", [])]))
         .unwrap()
-        .text()
+        .type.text()
     ).toBe("[42, 42]");
   });
 
   test("tuple", () => {
     expect(
-      deepEquals(evalType(EMPTY_ENV, T.tuple([])).unwrap(), T.tuple([]))
+      deepEquals(evalT(EMPTY_ENV, T.tuple([])).unwrap().type, T.tuple([]))
     ).toBe(true);
   });
 });

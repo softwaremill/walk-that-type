@@ -15,7 +15,7 @@ import {
 import { P, match } from "ts-pattern";
 import { extendsType } from "./extends-type";
 import { v4 as uuid } from "uuid";
-import { evalType } from "./eval-type";
+import { evalT } from "./eval-type";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 
@@ -177,8 +177,8 @@ const calculateNextStep = (
     })
     .with(P.shape({ _type: "conditionalType" }).select(), (tt) => {
       return Do(() => {
-        const lhs = evalType(env, tt.checkType).ok().bind();
-        const rhs = evalType(env, tt.extendsType).ok().bind();
+        const lhs = evalT(env, tt.checkType).ok().bind().type;
+        const rhs = evalT(env, tt.extendsType).ok().bind().type;
 
         const result = extendsType(env, lhs, rhs);
 
@@ -264,7 +264,7 @@ const calculateNextStep = (
         }
       });
 
-      const fullyEvaled = evalType(newEnv, typeDeclaration.type).unwrap();
+      const fullyEvaled = evalT(newEnv, typeDeclaration.type).unwrap().type;
 
       return some({
         nodeToEval: targetNodeId,
