@@ -5,7 +5,7 @@ import {
   findTypeNodeById,
   mapType,
   replaceNode,
-} from "./TypeNode";
+} from "./type-node";
 import {
   Environment,
   addToEnvironment,
@@ -13,9 +13,9 @@ import {
   lookupType,
 } from "./environment";
 import { P, match } from "ts-pattern";
-import { extendsType } from "./extendsType";
+import { extendsType } from "./extends-type";
 import { v4 as uuid } from "uuid";
-import { evalType } from "./eval";
+import { evalType } from "./eval-type";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 

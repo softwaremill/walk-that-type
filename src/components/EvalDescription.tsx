@@ -1,7 +1,7 @@
 import { Stack, Text, Code, Card, Title, Divider, Flex } from "@mantine/core";
 import { EvalStep } from "../interpreter/eval-tree";
 import { match, P } from "ts-pattern";
-import { printTypeNode } from "../interpreter/TypeNode";
+import { printTypeNode } from "../interpreter/type-node";
 
 const DividingLine = () => (
   <Flex justify="center">

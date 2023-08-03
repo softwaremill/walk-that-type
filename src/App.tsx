@@ -1,6 +1,6 @@
 import { Button, Divider, Flex, Grid, Stack, Title } from "@mantine/core";
 
-import { printTypeNode } from "./interpreter/TypeNode";
+import { printTypeNode } from "./interpreter/type-node";
 import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
 import { Fragment } from "react";
 import { Accordion } from "@mantine/core";

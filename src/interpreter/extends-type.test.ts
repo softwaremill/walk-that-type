@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createEnvironment } from "./environment";
-import { extendsType } from "./extendsType";
-import { T, TypeNode } from "./TypeNode";
-import { EMPTY_ENV } from "./eval.test";
+import { deepEquals, extendsType } from "./extends-type";
+import { T, TypeNode } from "./type-node";
+import { EMPTY_ENV } from "./eval-type.test";
 
 describe("extends", () => {
   it("should return true for T extends T", () => {
@@ -165,45 +165,65 @@ describe("extends", () => {
     // test inferring
 
     expect(
-      extendsType(
-        EMPTY_ENV,
-        exampleTuple,
-        T.tuple([T.infer("X"), T.rest(T.array(T.any()))])
-      ).inferredTypes.X
-    ).toEqual(T.typeDeclaration("X", [], T.numberLit(1)));
+      deepEquals(
+        extendsType(
+          EMPTY_ENV,
+          exampleTuple,
+          T.tuple([T.infer("X"), T.rest(T.array(T.any()))])
+        ).inferredTypes.X,
+        T.typeDeclaration("X", [], T.numberLit(1))
+      )
+    ).toEqual(true);
 
     expect(
-      extendsType(
-        EMPTY_ENV,
-        exampleTuple,
-        T.tuple([T.rest(T.array(T.any())), T.infer("X")])
-      ).inferredTypes.X
-    ).toEqual(T.typeDeclaration("X", [], T.stringLit("c")));
+      deepEquals(
+        extendsType(
+          EMPTY_ENV,
+          exampleTuple,
+          T.tuple([T.rest(T.array(T.any())), T.infer("X")])
+        ).inferredTypes.X,
+        T.typeDeclaration("X", [], T.stringLit("c"))
+      )
+    ).toEqual(true);
+
+    const result1 = extendsType(
+      EMPTY_ENV,
+      exampleTuple,
+      T.tuple([T.infer("X"), T.rest(T.array(T.any())), T.infer("Y")])
+    ).inferredTypes;
 
     expect(
-      extendsType(
-        EMPTY_ENV,
-        exampleTuple,
-        T.tuple([T.infer("X"), T.rest(T.array(T.any())), T.infer("Y")])
-      ).inferredTypes
-    ).toEqual({
-      X: T.typeDeclaration("X", [], T.numberLit(1)),
-      Y: T.typeDeclaration("Y", [], T.stringLit("c")),
-    });
+      deepEquals(result1.X, T.typeDeclaration("X", [], T.numberLit(1)))
+    ).toEqual(true);
+    expect(
+      deepEquals(result1.Y, T.typeDeclaration("Y", [], T.stringLit("c")))
+    ).toEqual(true);
+
+    const result2 = extendsType(
+      EMPTY_ENV,
+      exampleTuple,
+      T.tuple([T.infer("Head"), T.rest(T.infer("Rest"))])
+    ).inferredTypes;
 
     expect(
-      extendsType(
-        EMPTY_ENV,
-        exampleTuple,
-        T.tuple([T.infer("Head"), T.rest(T.infer("Rest"))])
-      ).inferredTypes
-    ).toEqual({
-      Head: T.typeDeclaration("Head", [], T.numberLit(1)),
-      Rest: T.typeDeclaration(
-        "Rest",
-        [],
-        T.tuple(exampleTuple.elements.slice(1))
-      ),
-    });
+      deepEquals(result2.Head, T.typeDeclaration("Head", [], T.numberLit(1)))
+    ).toEqual(true);
+
+    expect(
+      deepEquals(
+        result2.Rest,
+        T.typeDeclaration(
+          "Rest",
+          [],
+          T.tuple([
+            T.numberLit(2),
+            T.numberLit(3),
+            T.stringLit("a"),
+            T.stringLit("b"),
+            T.stringLit("c"),
+          ])
+        )
+      )
+    ).toEqual(true);
   });
 });

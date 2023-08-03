@@ -1,52 +1,58 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Option, none, some } from "this-is-ok/option";
 import { v4 as uuid } from "uuid";
 import { Environment } from "./environment";
 
 export type NodeId = string;
 
-export type TypeNode = { text: () => string; nodeId: NodeId } & (
-  | {
-      _type: "typeDeclaration";
-      name: string;
-      typeParameters: string[];
-      type: TypeNode;
-    }
-  | { _type: "numberLiteral"; value: number }
-  | { _type: "stringLiteral"; value: string }
-  | { _type: "booleanLiteral"; value: boolean }
-  | { _type: "tuple"; elements: TypeNode[] }
-  | { _type: "array"; elementType: TypeNode }
-  | { _type: "typeReference"; name: string; typeArguments: TypeNode[] }
-  // most primitive types
-  | { _type: "number" }
-  | { _type: "string" }
-  | { _type: "boolean" }
-  | { _type: "null" }
-  | { _type: "undefined" }
-  | { _type: "void" }
-  // special types
-  | { _type: "any" }
-  | { _type: "unknown" }
-  | { _type: "never" }
-  // unions & intersections
-  | { _type: "union"; members: TypeNode[] }
-  | { _type: "intersection"; members: TypeNode[] }
-  | {
-      _type: "conditionalType";
-      checkType: TypeNode;
-      extendsType: TypeNode;
-      thenType: TypeNode;
-      elseType: TypeNode;
-    }
-  | {
-      _type: "infer";
-      name: string;
-    }
-  | {
-      _type: "rest";
-      type: TypeNode;
-    }
-);
+type TypeNodeBase<T> = T &
+  (
+    | {
+        _type: "typeDeclaration";
+        name: string;
+        typeParameters: string[];
+        type: TypeNodeBase<T>;
+      }
+    | { _type: "numberLiteral"; value: number }
+    | { _type: "stringLiteral"; value: string }
+    | { _type: "booleanLiteral"; value: boolean }
+    | { _type: "tuple"; elements: TypeNodeBase<T>[] }
+    | { _type: "array"; elementType: TypeNodeBase<T> }
+    | { _type: "typeReference"; name: string; typeArguments: TypeNodeBase<T>[] }
+    // most primitive types
+    | { _type: "number" }
+    | { _type: "string" }
+    | { _type: "boolean" }
+    | { _type: "null" }
+    | { _type: "undefined" }
+    | { _type: "void" }
+    // special types
+    | { _type: "any" }
+    | { _type: "unknown" }
+    | { _type: "never" }
+    // unions & intersections
+    | { _type: "union"; members: TypeNodeBase<T>[] }
+    | { _type: "intersection"; members: TypeNodeBase<T>[] }
+    | {
+        _type: "conditionalType";
+        checkType: TypeNodeBase<T>;
+        extendsType: TypeNodeBase<T>;
+        thenType: TypeNodeBase<T>;
+        elseType: TypeNodeBase<T>;
+      }
+    | {
+        _type: "infer";
+        name: string;
+      }
+    | {
+        _type: "rest";
+        type: TypeNodeBase<T>;
+      }
+  );
+
+export type TypeNode = TypeNodeBase<{ text: () => string; nodeId: NodeId }>;
+export type TypeNodeWithoutId = TypeNodeBase<{ text: () => string }>;
+
 export type EvaluatedType = { isFullyEvaluated: boolean } & TypeNode;
 
 const typeDeclaration = (
@@ -392,6 +398,77 @@ export const mapType = (
     case "infer":
     case "typeDeclaration":
       return type;
+  }
+};
+
+export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
+  switch (type._type) {
+    case "string":
+    case "number":
+    case "boolean":
+    case "undefined":
+    case "numberLiteral":
+    case "stringLiteral":
+    case "booleanLiteral":
+    case "null":
+    case "void":
+    case "any":
+    case "unknown":
+    case "infer":
+    case "never": {
+      const { nodeId, ...rest } = type;
+      return rest;
+    }
+
+    case "union":
+    case "intersection": {
+      const { nodeId, members, ...rest } = type;
+      return {
+        ...rest,
+        members: members.map(withoutNodeIds),
+      };
+    }
+
+    case "typeDeclaration":
+    case "rest": {
+      const { nodeId, type: t, ...rest } = type;
+      return {
+        ...rest,
+        type: withoutNodeIds(t),
+      };
+    }
+    case "tuple": {
+      const { nodeId, elements, ...rest } = type;
+      return {
+        ...rest,
+        elements: elements.map(withoutNodeIds),
+      };
+    }
+    case "array": {
+      const { nodeId, elementType, ...rest } = type;
+      return {
+        ...rest,
+        elementType: withoutNodeIds(elementType),
+      };
+    }
+    case "typeReference": {
+      const { nodeId, typeArguments, ...rest } = type;
+      return {
+        ...rest,
+        typeArguments: typeArguments.map(withoutNodeIds),
+      };
+    }
+    case "conditionalType": {
+      const { nodeId, checkType, extendsType, thenType, elseType, ...rest } =
+        type;
+      return {
+        ...rest,
+        checkType: withoutNodeIds(checkType),
+        extendsType: withoutNodeIds(extendsType),
+        thenType: withoutNodeIds(thenType),
+        elseType: withoutNodeIds(elseType),
+      };
+    }
   }
 };
 

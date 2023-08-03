@@ -1,8 +1,8 @@
 import { match, P } from "ts-pattern";
 import { addToEnvironment, Environment } from "./environment";
-import { EvaluatedType, T, TypeNode } from "./TypeNode";
+import { EvaluatedType, T, TypeNode } from "./type-node";
 import { err, ok, Result } from "this-is-ok/result";
-import { extendsType } from "./extendsType";
+import { extendsType } from "./extends-type";
 
 const fullyEvaled = (type: EvaluatedType): EvaluatedType => ({
   ...type,

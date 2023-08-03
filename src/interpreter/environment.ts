@@ -1,8 +1,8 @@
 import { Result, err, ok } from "this-is-ok/result";
 import { TypeDeclaration } from ".";
 import ts from "typescript";
-import { mapASTToTypeNodes } from "./mapASTToTypeNodes";
-import { T, TypeNode } from "./TypeNode";
+import { mapASTToTypeNodes } from "./map-AST-to-type-nodes";
+import { T, TypeNode } from "./type-node";
 import { Option, of } from "this-is-ok/option";
 
 export type TypeIdentifier = string;

@@ -1,6 +1,6 @@
 import { P, match } from "ts-pattern";
 import { Environment, extendEnvironment } from "./environment";
-import { T, TypeNode } from "./TypeNode";
+import { T, TypeNode, withoutNodeIds } from "./type-node";
 import { addToEnvironment } from "./environment";
 
 export type ExtendsTypeResult = {
@@ -8,14 +8,8 @@ export type ExtendsTypeResult = {
   inferredTypes: Environment;
 };
 
-const deepEquals = (t1: TypeNode, t2: TypeNode): boolean => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { nodeId: _nodeId1, ...t1WithoutId } = t1;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { nodeId: _nodeId2, ...t2WithoutId } = t2;
-
-  return JSON.stringify(t1WithoutId) === JSON.stringify(t2WithoutId);
-};
+export const deepEquals = (t1: TypeNode, t2: TypeNode): boolean =>
+  JSON.stringify(withoutNodeIds(t1)) === JSON.stringify(withoutNodeIds(t2));
 
 const positiveExtendsResultWithoutInfer = (): ExtendsTypeResult => ({
   extends: true,
@@ -31,7 +25,9 @@ export const extendsType = (
     // T extends T -> true
     .when(
       ([t1, t2]) => deepEquals(t1, t2),
-      () => positiveExtendsResultWithoutInfer()
+      () => {
+        return positiveExtendsResultWithoutInfer();
+      }
     )
 
     // T extends infer X -> T with X = T
@@ -219,11 +215,26 @@ function matchTuples(
         ),
       };
     } else if (restType.type._type === "array") {
-      return extendsType(
+      const result = extendsType(
         extendEnvironment(env, justInferredTypes),
         T.tuple(restTypeSubArray),
         restType.type
       );
+
+      if (!result.extends) {
+        return {
+          extends: false,
+          inferredTypes: {},
+        };
+      } else {
+        return {
+          extends: true,
+          inferredTypes: {
+            ...justInferredTypes,
+            ...result.inferredTypes,
+          },
+        };
+      }
     }
   }
 

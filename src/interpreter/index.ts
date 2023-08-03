@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import { TypeNode } from "./TypeNode";
-import { mapASTToTypeNodes } from "./mapASTToTypeNodes";
+import { TypeNode } from "./type-node";
+import { mapASTToTypeNodes } from "./map-AST-to-type-nodes";
 import { Result, err } from "this-is-ok/result";
 
 export type TypeDeclaration = Extract<TypeNode, { _type: "typeDeclaration" }>;

@@ -1,15 +1,6 @@
 import ts from "typescript";
-import { T, TypeNode } from "./TypeNode";
+import { T, TypeNode } from "./type-node";
 import { Result, err, ok } from "this-is-ok/result";
-
-// TODO: add this to this-is-ok
-// const sequence = <T>(opts: Option<T>[]): Option<T[]> => {
-//   if (opts.ok((el) => el.isNone)) {
-//     return none;
-//   }
-
-//   return ok(opts.map((o) => o.unwrap()));
-// };
 
 const sequence = <T, E>(opts: Result<T, E>[]): Result<T[], E> => {
   const error = opts.find((el) => el.isErr);

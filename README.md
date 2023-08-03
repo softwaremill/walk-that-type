@@ -7,6 +7,8 @@
 - [ ] object types
 - [ ] union types
 - [ ] intersection types
+- [ ] function types
+- [ ] template string literals
 - [ ] mapped types
 - [ ] built-in types
   - [ ] Partial
