@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Option, none, some } from "this-is-ok/option";
 import { v4 as uuid } from "uuid";
-import { Environment } from "./environment";
+import { Environment } from "../environment";
 
 export type NodeId = string;
 
@@ -566,3 +566,6 @@ export const printTypeNode = (t: TypeNode): string => {
       return `type ${t.name} = ${printTypeNode(t.type)}`;
   }
 };
+
+export const deepEquals = (t1: TypeNode, t2: TypeNode): boolean =>
+  JSON.stringify(withoutNodeIds(t1)) === JSON.stringify(withoutNodeIds(t2));

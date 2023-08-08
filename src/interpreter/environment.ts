@@ -1,9 +1,10 @@
 import { Result, err, ok } from "this-is-ok/result";
-import { TypeDeclaration } from ".";
 import ts from "typescript";
-import { mapASTToTypeNodes } from "./map-AST-to-type-nodes";
+import { mapASTToTypeNodes } from "./type-node/map-AST-to-type-nodes";
 import { T, TypeNode } from "./type-node";
 import { Option, of } from "this-is-ok/option";
+
+export type TypeDeclaration = Extract<TypeNode, { _type: "typeDeclaration" }>;
 
 export type TypeIdentifier = string;
 export type Environment = {

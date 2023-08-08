@@ -3,11 +3,11 @@ import {
   addToEnvironment,
   Environment,
   extendEnvironment,
-} from "./environment";
-import { T, TypeNode } from "./type-node";
+} from "../environment";
+import { deepEquals, T, TypeNode } from "../type-node";
 import { Do, err, ok, Result } from "this-is-ok/result";
-import { deepEquals, extendsType } from "./extends-type";
-import { sequence } from "./map-AST-to-type-nodes";
+import { sequence } from "../type-node/map-AST-to-type-nodes";
+import { extendsT } from "../extendsT/extendsT";
 
 const removeDuplicates = (arr: TypeNode[]): TypeNode[] => {
   const uniq: TypeNode[] = [];
@@ -58,7 +58,7 @@ export const evalT = (
         const lhs = evalT(env, t.checkType).bind().type;
         const rhs = evalT(env, t.extendsType).bind().type;
 
-        const extendsResult = extendsType(env, lhs, rhs);
+        const extendsResult = extendsT(env, lhs, rhs);
         const newEnv = extendEnvironment(env, extendsResult.inferredTypes);
 
         return extendsResult.extends

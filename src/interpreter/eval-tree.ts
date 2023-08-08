@@ -13,9 +13,9 @@ import {
   lookupType,
 } from "./environment";
 import { P, match } from "ts-pattern";
-import { extendsType } from "./extends-type";
 import { v4 as uuid } from "uuid";
-import { evalT } from "./eval-type";
+import { evalT } from "./evalT/eval-type";
+import { extendsT } from "./extendsT/extendsT";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 
@@ -180,7 +180,7 @@ const calculateNextStep = (
         const lhs = evalT(env, tt.checkType).ok().bind().type;
         const rhs = evalT(env, tt.extendsType).ok().bind().type;
 
-        const result = extendsType(env, lhs, rhs);
+        const result = extendsT(env, lhs, rhs);
 
         const evaluatedThenType = result.extends ? tt.thenType : tt.elseType;
         const newEnv = extendEnvironment(env, result.inferredTypes);

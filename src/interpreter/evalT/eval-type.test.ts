@@ -1,8 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { evalT } from "./eval-type";
-import { Environment, createEnvironment } from "./environment";
-import { T } from "./type-node";
-import { deepEquals } from "./extends-type";
+import { Environment, createEnvironment } from "../environment";
+import { T, deepEquals } from "../type-node";
 
 export const EMPTY_ENV: Environment = {};
 

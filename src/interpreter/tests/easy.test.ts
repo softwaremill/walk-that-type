@@ -1,9 +1,8 @@
 import { expect, test } from "vitest";
 import { createEnvironment } from "../environment";
-import { createTypeToEval } from "..";
-import { evalT } from "../eval-type";
-import { T } from "../type-node";
-import { deepEquals } from "../extends-type";
+import { evalT } from "../evalT/eval-type";
+import { T, deepEquals } from "../type-node";
+import { createTypeToEval } from "../type-node/create-type-to-eval";
 
 test("First", () => {
   const env = createEnvironment(

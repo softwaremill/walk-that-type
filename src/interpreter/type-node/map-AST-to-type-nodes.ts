@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { T, TypeNode } from "./type-node";
+import { T, TypeNode } from ".";
 import { Result, err, ok } from "this-is-ok/result";
 
 export const sequence = <T, E>(opts: Result<T, E>[]): Result<T[], E> => {

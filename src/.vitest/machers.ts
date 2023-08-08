@@ -1,6 +1,5 @@
 import { expect } from "vitest";
-import type { TypeNode } from "../interpreter/type-node";
-import { deepEquals } from "../interpreter/extends-type";
+import { deepEquals, type TypeNode } from "../interpreter/type-node";
 
 expect.extend({
   equalsTypeNode(received: TypeNode, expected: TypeNode) {

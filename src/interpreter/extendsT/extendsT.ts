@@ -1,22 +1,22 @@
 import { P, match } from "ts-pattern";
-import { Environment, extendEnvironment } from "./environment";
-import { T, TypeNode, withoutNodeIds } from "./type-node";
-import { addToEnvironment } from "./environment";
+import {
+  Environment,
+  extendEnvironment,
+  addToEnvironment,
+} from "../environment";
+import { T, TypeNode, deepEquals } from "../type-node";
 
 export type ExtendsTypeResult = {
   extends: boolean;
   inferredTypes: Environment;
 };
 
-export const deepEquals = (t1: TypeNode, t2: TypeNode): boolean =>
-  JSON.stringify(withoutNodeIds(t1)) === JSON.stringify(withoutNodeIds(t2));
-
 const positiveExtendsResultWithoutInfer = (): ExtendsTypeResult => ({
   extends: true,
   inferredTypes: {},
 });
 
-export const extendsType = (
+export const extendsT = (
   env: Environment,
   t1: TypeNode,
   t2: TypeNode
@@ -108,7 +108,7 @@ export const extendsType = (
     .with([{ _type: "tuple" }, { _type: "array" }], ([t1, t2]) => {
       return {
         extends: t1.elements.every(
-          (el) => extendsType(env, el, t2.elementType).extends
+          (el) => extendsT(env, el, t2.elementType).extends
         ),
         inferredTypes: {},
       };
@@ -152,7 +152,7 @@ function matchTuples(
     lastElemIdxFromFront < shape.elements.length &&
     shape.elements[lastElemIdxFromFront]._type !== "rest"
   ) {
-    const result = extendsType(
+    const result = extendsT(
       extendEnvironment(env, justInferredTypes),
       t.elements[lastElemIdxFromFront],
       shape.elements[lastElemIdxFromFront]
@@ -177,7 +177,7 @@ function matchTuples(
       shape.elements[shape.elements.length - 1 - lastElemIdxFromBack]._type !==
         "rest"
     ) {
-      const result = extendsType(
+      const result = extendsT(
         extendEnvironment(env, justInferredTypes),
         t.elements[t.elements.length - 1 - lastElemIdxFromBack],
         shape.elements[shape.elements.length - 1 - lastElemIdxFromBack]
@@ -215,7 +215,7 @@ function matchTuples(
         ),
       };
     } else if (restType.type._type === "array") {
-      const result = extendsType(
+      const result = extendsT(
         extendEnvironment(env, justInferredTypes),
         T.tuple(restTypeSubArray),
         restType.type
