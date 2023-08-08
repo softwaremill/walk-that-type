@@ -6,8 +6,19 @@ import {
 } from "./environment";
 import { T, TypeNode } from "./type-node";
 import { Do, err, ok, Result } from "this-is-ok/result";
-import { extendsType } from "./extends-type";
+import { deepEquals, extendsType } from "./extends-type";
 import { sequence } from "./map-AST-to-type-nodes";
+
+const removeDuplicates = (arr: TypeNode[]): TypeNode[] => {
+  const uniq: TypeNode[] = [];
+  arr.forEach((el) => {
+    if (!uniq.some((u) => deepEquals(el, u))) {
+      uniq.push(el);
+    }
+  });
+
+  return uniq;
+};
 
 export const evalT = (
   env: Environment,
@@ -88,6 +99,40 @@ export const evalT = (
 
       return evalT(newEnv, typeDeclaration.type);
     })
+
+    .with({ _type: "union" }, (t) => {
+      return sequence(
+        t.members.map((type) => evalT(env, type).map(({ type }) => type))
+      ).map((evaledTypes) => {
+        // remove duplicated types and filter out never
+        const withoutDuplicates = removeDuplicates(evaledTypes).filter(
+          (t) => t._type !== "never"
+        );
+
+        // unknown and any are the most general types
+        if (withoutDuplicates.some((t) => t._type === "unknown")) {
+          return { type: T.unknown(), env };
+        }
+        if (withoutDuplicates.some((t) => t._type === "any")) {
+          return { type: T.any(), env };
+        }
+
+        // simplify true | false to boolean
+        if (
+          withoutDuplicates.length === 2 &&
+          withoutDuplicates.some((t) => deepEquals(t, T.booleanLit(true))) &&
+          withoutDuplicates.some((t) => deepEquals(t, T.booleanLit(false)))
+        ) {
+          return { type: T.boolean(), env };
+        }
+
+        // if there is only one type, return it
+        return withoutDuplicates.length === 1
+          ? { type: withoutDuplicates[0], env }
+          : { type: T.union(withoutDuplicates), env };
+      });
+    })
+
     .otherwise(() => {
       console.error("unhandled type", type);
       return err(new Error("unhandled type in evalT"));

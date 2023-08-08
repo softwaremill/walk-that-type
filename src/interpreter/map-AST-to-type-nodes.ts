@@ -40,7 +40,7 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
   } else if (ts.isUnionTypeNode(node)) {
     return sequence(node.types.map(mapASTToTypeNodes)).map(T.union);
   } else if (ts.isIntersectionTypeNode(node)) {
-    return sequence(node.types.map(mapASTToTypeNodes)).map(T.union);
+    return sequence(node.types.map(mapASTToTypeNodes)).map(T.intersection);
   } else if (node.kind === ts.SyntaxKind.NumberKeyword) {
     return ok(T.number());
   } else if (node.kind === ts.SyntaxKind.StringKeyword) {
