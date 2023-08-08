@@ -114,6 +114,23 @@ export const extendsT = (
       };
     })
 
+    // UNION TYPE
+    .with([P._, { _type: "union" }], ([t1, t2]) => {
+      return {
+        extends: t2.members.some((member) => extendsT(env, t1, member).extends),
+        inferredTypes: {},
+      };
+    })
+
+    .with([{ _type: "union" }, P._], ([t1, t2]) => {
+      return {
+        extends: t1.members.every(
+          (member) => extendsT(env, member, t2).extends
+        ),
+        inferredTypes: {},
+      };
+    })
+
     // default to false
     .otherwise(() => {
       return {

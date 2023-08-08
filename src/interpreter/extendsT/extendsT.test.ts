@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { createEnvironment } from "../environment";
 import { extendsT } from "./extendsT";
 import { T, TypeNode, deepEquals } from "../type-node";
@@ -211,5 +211,67 @@ describe("extends", () => {
         )
       )
     ).toEqual(true);
+  });
+});
+
+describe("extends union", () => {
+  test("For union to be assignable to a type, every element within the union must be assignable to that type", () => {
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.union([T.stringLit("a"), T.stringLit("b")]),
+        T.stringLit("a")
+      ).extends
+    ).toBe(false);
+
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.union([T.stringLit("a"), T.stringLit("b")]),
+        T.string()
+      ).extends
+    ).toBe(true);
+
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.union([T.stringLit("a"), T.stringLit("b"), T.number()]),
+        T.string()
+      ).extends
+    ).toBe(false);
+  });
+
+  test("For any type to be assignable to an union, it must be assignable to at least one union member", () => {
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.stringLit("a"),
+        T.union([T.stringLit("a"), T.stringLit("b")])
+      ).extends
+    ).toBe(true);
+
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.string(),
+        T.union([T.stringLit("a"), T.stringLit("b")])
+      ).extends
+    ).toBe(false);
+
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.string(),
+        T.union([T.stringLit("a"), T.stringLit("b"), T.number()])
+      ).extends
+    ).toBe(false);
+
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.numberLit(42),
+        T.union([T.stringLit("a"), T.stringLit("b"), T.number()])
+      ).extends
+    ).toBe(true);
   });
 });
