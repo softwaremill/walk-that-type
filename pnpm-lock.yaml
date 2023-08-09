@@ -60,8 +60,8 @@ dependencies:
     specifier: ^18.2.0
     version: 18.2.0(react@18.2.0)
   this-is-ok:
-    specifier: ^0.5.0
-    version: 0.5.0
+    specifier: ^0.6.0
+    version: 0.6.0
   ts-pattern:
     specifier: ^5.0.3
     version: 5.0.3
@@ -3536,8 +3536,8 @@ packages:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
     dev: true
 
-  /this-is-ok@0.5.0:
-    resolution: {integrity: sha512-WArNdrpHPSPZooqbtC+eOzsK3TPLKG9AKawkGOLNyc6qAcOnRlfm8n4gsZpj0+XIOGQ9CWH6E7WYHyXq/G+Evw==}
+  /this-is-ok@0.6.0:
+    resolution: {integrity: sha512-hEF0MqnRU4X3xYBLP/mzxmf86GQyCPl1qwdKgmpFmmqmIt6MgyoP6GgrWnGjlCQ+7qHOm4M5fXDKQ7HuobNCFw==}
     dev: false
 
   /throttle-debounce@3.0.1:

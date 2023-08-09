@@ -2,6 +2,7 @@ import { Do, Option, none, some } from "this-is-ok/option";
 import {
   NodeId,
   TypeNode,
+  deepEquals,
   findTypeNodeById,
   mapType,
   replaceNode,
@@ -83,33 +84,34 @@ export type EvalStep = {
 
         evalTrace: EvalTrace;
       }
-    | { _type: "applyRestOperator"; restElement: TypeNode };
+    | { _type: "applyRestOperator"; restElement: TypeNode }
+    | { _type: "simplifyUnion"; union: TypeNode };
 };
 
 export type EvalTrace = [TypeNode, ...EvalStep[]];
 
-const chooseNodeToEval = (node: TypeNode): Option<NodeId> => {
+const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
   return match(node)
     .when(
       (t) => isLeafType(t),
       () => none
     )
-    .with({ _type: "array" }, (t) => chooseNodeToEval(t.elementType))
+    .with({ _type: "array" }, (t) => chooseNodeToEval(env, t.elementType))
     .with({ _type: "tuple" }, (t) => {
       for (const el of t.elements) {
         if (el._type === "rest") {
           if (el.type._type === "tuple") {
             return some(node.nodeId);
           }
-          const nodeToEvalInRest = chooseNodeToEval(el.type);
+          const nodeToEvalInRest = chooseNodeToEval(env, el.type);
           if (nodeToEvalInRest.isSome) {
-            return chooseNodeToEval(el.type);
+            return chooseNodeToEval(env, el.type);
           } else {
             return some(node.nodeId);
           }
         }
 
-        const res = chooseNodeToEval(el);
+        const res = chooseNodeToEval(env, el);
         if (res.isSome) {
           return res;
         }
@@ -124,6 +126,24 @@ const chooseNodeToEval = (node: TypeNode): Option<NodeId> => {
       return some(t.nodeId);
     })
     .with({ _type: "typeReference" }, (t) => some(t.nodeId))
+    .with({ _type: "union" }, (t) => {
+      for (const el of t.members) {
+        const res = chooseNodeToEval(env, el);
+        if (res.isSome) {
+          return res;
+        }
+      }
+
+      return evalT(env, t)
+        .ok()
+        .flatMap((simplified) => {
+          if (deepEquals(simplified.type, t)) {
+            return none;
+          } else {
+            return some(t.nodeId);
+          }
+        });
+    })
     .otherwise(() => {
       console.warn("???", node);
       return none;
@@ -277,6 +297,21 @@ const calculateNextStep = (
         },
       } as EvalStep);
     })
+
+    .with(P.shape({ _type: "union" }).select(), (tt) =>
+      evalT(env, tt)
+        .ok()
+        .map((t) => ({
+          nodeToEval: targetNodeId,
+          result: replaceNode(type, targetNodeId, t.type),
+          resultEnv: env,
+          evalDescription: {
+            _type: "simplifyUnion",
+            union: tt,
+          },
+        }))
+    )
+
     .otherwise(() => {
       throw new Error(`unimplemented: ${nodeToEval._type}`);
     });
@@ -293,9 +328,11 @@ export const getEvalTrace = (
   let currentType = startingType;
   let currentEnv = startingEnv;
   for (let i = 0; i < EVAL_LIMIT; i++) {
-    currentStep = chooseNodeToEval(currentType).flatMap((nodeId) => {
-      return calculateNextStep(nodeId, currentType, currentEnv);
-    });
+    currentStep = chooseNodeToEval(currentEnv, currentType).flatMap(
+      (nodeId) => {
+        return calculateNextStep(nodeId, currentType, currentEnv);
+      }
+    );
     if (currentStep.isNone) {
       break;
     } else {

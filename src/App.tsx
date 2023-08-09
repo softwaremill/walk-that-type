@@ -12,15 +12,20 @@ import { CodeEditor } from "./components/CodeEditor";
 import { enableReactUse } from "@legendapp/state/config/enableReactUse";
 import { useSelector } from "@legendapp/state/react";
 import { createEnvironment } from "./interpreter/environment";
-import { createTypeToEval } from "./interpreter";
 import { some, Do, none, Option } from "this-is-ok/option";
 import { formatCode } from "./utils/formatCode";
 import { Select } from "@mantine/core";
+import { createTypeToEval } from "./interpreter/type-node/create-type-to-eval";
 
 enableReactUse();
 enableLegendStateReact();
 
 const EXAMPLES = [
+  {
+    name: "Simplify union",
+    envSource: "type constNever<T> = never;",
+    typeSource: "42 | 'hello' | 'hello' | never | constNever<42>",
+  },
   {
     name: "Reverse",
     envSource:
@@ -84,7 +89,7 @@ const App = () => {
         <Grid.Col span={4}>
           <Stack>
             <Title color="#35545a" order={3}>
-              Presets
+              Examples
             </Title>
             <Select
               value={state.currentExampleName.get()}

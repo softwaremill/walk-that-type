@@ -29,6 +29,7 @@ export const EvalDescription = ({
             .with("conditionalType", () => `Conditional type`)
             .with("substituteWithDefinition", () => `Definition Substitution`)
             .with("applyRestOperator", () => `Apply rest operator`)
+            .with("simplifyUnion", () => `Simplify union type`)
             .exhaustive()}
         </Title>
 
@@ -120,6 +121,17 @@ export const EvalDescription = ({
             (restEl) => (
               <Text color="gray.6" size={13}>
                 Applying rest operator to <Code>{printTypeNode(restEl)}</Code>.
+              </Text>
+            )
+          )
+          .with(
+            {
+              _type: "simplifyUnion",
+              union: P.select(),
+            },
+            (unionEl) => (
+              <Text color="gray.6" size={13}>
+                Simplifying the union <Code>{printTypeNode(unionEl)}</Code>.
               </Text>
             )
           )
