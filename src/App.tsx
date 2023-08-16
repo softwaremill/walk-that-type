@@ -22,6 +22,11 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
+    name: "Object type",
+    envSource: "",
+    typeSource: "{ a: 42, b: { c: 'howdy', d: true | false } }",
+  },
+  {
     name: "Simplify union",
     envSource: "type constNever<T> = never;",
     typeSource: "42 | 'hello' | 'hello' | never | constNever<42>",

@@ -79,7 +79,19 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
     return sequence(node.typeArguments?.map(mapASTToTypeNodes) ?? []).map(
       (args) => T.typeReference(node.typeName.getText().trim(), args)
     );
+  } else if (ts.isTypeLiteralNode(node)) {
+    return ok(
+      T.object(
+        node.members.map((m) => [
+          m.name?.getText() as string,
+          mapASTToTypeNodes((m as any).type).expect(
+            "Error while parsing object type"
+          ),
+        ])
+      )
+    );
   } else {
+    console.error(node, `Unsupported type ${ts.SyntaxKind[node.kind]}`);
     return err(new Error(`Unsupported type ${ts.SyntaxKind[node.kind]}`));
   }
 };

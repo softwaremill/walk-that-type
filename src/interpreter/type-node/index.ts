@@ -16,6 +16,7 @@ type TypeNodeBase<T> = T &
     | { _type: "numberLiteral"; value: number }
     | { _type: "stringLiteral"; value: string }
     | { _type: "booleanLiteral"; value: boolean }
+    | { _type: "object"; properties: [key: string, value: TypeNodeBase<T>][] }
     | { _type: "tuple"; elements: TypeNodeBase<T>[] }
     | { _type: "array"; elementType: TypeNodeBase<T> }
     | { _type: "typeReference"; name: string; typeArguments: TypeNodeBase<T>[] }
@@ -215,6 +216,17 @@ const conditionalType = (
   nodeId: uuid(),
 });
 
+const objectType = (
+  properties: [key: string, value: TypeNode][]
+): TypeNode => ({
+  _type: "object",
+  properties,
+  nodeId: uuid(),
+  text: () => `{
+    ${properties.map(([key, value]) => `${key}: ${value.text()}`)}
+    }`,
+});
+
 export const T = {
   typeDeclaration,
   numberLit,
@@ -237,6 +249,7 @@ export const T = {
   infer,
   rest,
   array,
+  object: objectType,
 };
 
 export const traverse = (type: TypeNode, f: (t: TypeNode) => void) => {
@@ -331,6 +344,16 @@ export const mapType = (
       return {
         ...type,
         elements,
+      };
+    }
+
+    case "object": {
+      return {
+        ...type,
+        properties: type.properties.map(([k, val]) => {
+          const newVal = mapType(val, f);
+          return [k, newVal];
+        }),
       };
     }
 
@@ -442,6 +465,15 @@ export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
         elements: elements.map(withoutNodeIds),
       };
     }
+
+    case "object": {
+      const { nodeId, properties, ...rest } = type;
+      return {
+        ...rest,
+        properties: properties.map(([k, v]) => [k, withoutNodeIds(v)]),
+      };
+    }
+
     case "array": {
       const { nodeId, elementType, ...rest } = type;
       return {
@@ -530,6 +562,7 @@ export const printTypeNode = (t: TypeNode): string => {
     case "any":
     case "unknown":
     case "never":
+    case "object":
       return t.text();
 
     case "tuple":

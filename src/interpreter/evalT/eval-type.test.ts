@@ -106,4 +106,41 @@ describe("eval", () => {
       "true | false simplifies to boolean"
     ).equalsTypeNode(T.boolean());
   });
+
+  test("object type", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.object([
+          ["a", T.numberLit(1)],
+          ["b", T.union([T.booleanLit(true), T.booleanLit(false)])],
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.object([
+        ["a", T.numberLit(1)],
+        ["b", T.boolean()],
+      ])
+    );
+
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.object([
+          ["a", T.numberLit(1)],
+          [
+            "b",
+            T.object([
+              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
+            ]),
+          ],
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.object([
+        ["a", T.numberLit(1)],
+        ["b", T.object([["c", T.boolean()]])],
+      ])
+    );
+  });
 });
