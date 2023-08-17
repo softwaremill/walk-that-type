@@ -84,7 +84,7 @@ describe("eval", () => {
 
     expect(
       evalT(EMPTY_ENV, T.union([T.numberLit(42), T.unknown()])).unwrap().type,
-      "anything with unknown is unknown"
+      "anything, but any, with unknown is unknown"
     ).equalsTypeNode(T.unknown());
 
     expect(
@@ -93,17 +93,19 @@ describe("eval", () => {
     ).equalsTypeNode(T.numberLit(42));
 
     expect(
-      evalT(EMPTY_ENV, T.union([T.numberLit(42), T.never(), T.any()])).unwrap()
-        .type,
+      evalT(
+        EMPTY_ENV,
+        T.union([T.numberLit(42), T.unknown(), T.any()])
+      ).unwrap().type,
       "any poisons the union"
     ).equalsTypeNode(T.any());
 
     expect(
       evalT(
         EMPTY_ENV,
-        T.union([T.booleanLit(true), T.booleanLit(false)])
+        T.union([T.booleanLit(true), T.booleanLit(false), T.numberLit(42)])
       ).unwrap().type,
       "true | false simplifies to boolean"
-    ).equalsTypeNode(T.boolean());
+    ).equalsTypeNode(T.union([T.numberLit(42), T.boolean()]));
   });
 });
