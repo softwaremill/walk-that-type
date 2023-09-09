@@ -44,5 +44,6 @@
   `pnpm check:types` to find all these places).
 - Add tests and implement `evalT` for this feature.
 - Add tests and implement `extendsT` for this feature.
+- Add traverse logic in `traverse` function.
 - In `eval-tree.ts` add new cases in `calculateNextStep` and `chooseNodeToEval`.
 - Finally, update `EvalDescription` component.

@@ -274,6 +274,11 @@ export const traverse = (type: TypeNode, f: (t: TypeNode) => void) => {
       type.elements.forEach((e) => traverse(e, f));
       break;
 
+    case "object":
+      f(type);
+      type.properties.forEach(([_k, v]) => traverse(v, f));
+      break;
+
     case "array":
       f(type);
       f(type.elementType);
@@ -348,12 +353,17 @@ export const mapType = (
     }
 
     case "object": {
+      const properties = type.properties.map(([k, val]) => {
+        const newVal = mapType(val, f);
+        return [k, newVal];
+      }) as [string, TypeNode][];
       return {
         ...type,
-        properties: type.properties.map(([k, val]) => {
-          const newVal = mapType(val, f);
-          return [k, newVal];
-        }),
+        properties,
+        // FIXME: do sth so that this repetition is not needed
+        text: () => `{
+          ${properties.map(([key, value]) => `${key}: ${value.text()}`)}
+          }`,
       };
     }
 
