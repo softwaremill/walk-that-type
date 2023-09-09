@@ -131,6 +131,11 @@ export const extendsT = (
       };
     })
 
+    // OBJECT TYPE
+    .with([{ _type: "object" }, { _type: "object" }], ([t1, t2]) => {
+      return matchObjectTypes(env, t1, t2);
+    })
+
     // default to false
     .otherwise(() => {
       return {
@@ -138,6 +143,45 @@ export const extendsT = (
         inferredTypes: {},
       };
     });
+
+function matchObjectTypes(
+  env: Environment,
+  t: Extract<TypeNode, { _type: "object" }>,
+  shape: Extract<TypeNode, { _type: "object" }>
+): ExtendsTypeResult {
+  let justInferredTypes: Environment = {};
+
+  // An object A can be assigned to an object B if it has at least all properties of B,
+  // and they all contain assignable types.
+
+  for (const [key, value] of Object.values(shape.properties)) {
+    const correspondingType = t.properties.find(([k]) => k === key);
+    // Object `t` is missing at least one property from `shape`, so it is not assignable
+    if (!correspondingType) {
+      return {
+        extends: false,
+        inferredTypes: {},
+      };
+    }
+
+    // Of course, properties under corresponding keys must be assignable
+    const result = extendsT(env, correspondingType[1], value);
+    if (!result.extends) {
+      return {
+        extends: false,
+        inferredTypes: {},
+      };
+    }
+    justInferredTypes = extendEnvironment(
+      justInferredTypes,
+      result.inferredTypes
+    );
+  }
+  return {
+    extends: true,
+    inferredTypes: justInferredTypes,
+  };
+}
 
 function matchTuples(
   env: Environment,

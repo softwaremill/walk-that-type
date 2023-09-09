@@ -275,3 +275,131 @@ describe("extends union", () => {
     ).toBe(true);
   });
 });
+
+describe("extends object", () => {
+  test("2 objects with the same keys", () => {
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.object([
+          ["a", T.numberLit(1)],
+          ["b", T.stringLit("yo")],
+        ]),
+        T.object([
+          ["a", T.numberLit(1)],
+          ["b", T.stringLit("yo")],
+        ])
+      ).extends
+    ).toBe(true);
+
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.object([
+          ["a", T.numberLit(1)],
+          ["b", T.stringLit("yo")],
+        ]),
+        T.object([
+          ["a", T.number()],
+          ["b", T.string()],
+        ])
+      ).extends
+    ).toBe(true);
+  });
+
+  test("object A can be assigned to object B if it has at least all properties of B", () => {
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.object([
+          ["a", T.numberLit(1)],
+          ["b", T.stringLit("yo")],
+        ]),
+        T.object([["a", T.number()]])
+      ).extends
+    ).toBe(true);
+
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.object([["a", T.number()]]),
+        T.object([
+          ["a", T.numberLit(1)],
+          ["b", T.stringLit("yo")],
+        ])
+      ).extends
+    ).toBe(false);
+  });
+
+  test("nested object test", () => {
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.object([
+          ["a", T.numberLit(1)],
+          [
+            "b",
+            T.object([
+              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
+              ["d", T.stringLit("yo")],
+            ]),
+          ],
+        ]),
+        T.object([
+          ["a", T.number()],
+          [
+            "b",
+            T.object([
+              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
+              ["d", T.string()],
+            ]),
+          ],
+        ])
+      ).extends
+    ).toBe(true);
+
+    expect(
+      extendsT(
+        EMPTY_ENV,
+        T.object([
+          ["a", T.numberLit(1)],
+          [
+            "b",
+            T.object([
+              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
+            ]),
+          ],
+        ]),
+        T.object([
+          ["a", T.number()],
+          [
+            "b",
+            T.object([
+              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
+              ["d", T.string()],
+            ]),
+          ],
+        ])
+      ).extends
+    ).toBe(false);
+  });
+
+  test("inferring in objects", () => {
+    const result = extendsT(
+      EMPTY_ENV,
+      T.object([
+        ["a", T.numberLit(1)],
+        ["b", T.stringLit("yo")],
+      ]),
+      T.object([
+        ["a", T.infer("X")],
+        ["b", T.infer("Y")],
+      ])
+    ).inferredTypes;
+
+    expect(result.X).equalsTypeNode(T.typeDeclaration("X", [], T.numberLit(1)));
+    expect(result.Y).equalsTypeNode(
+      T.typeDeclaration("Y", [], T.stringLit("yo"))
+    );
+  });
+});
