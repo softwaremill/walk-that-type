@@ -117,26 +117,30 @@ export const evalT = (
         t.members.map((type) => evalT(env, type).map(({ type }) => type))
       ).map((evaledTypes) => {
         // remove duplicated types and filter out never
-        const withoutDuplicates = removeDuplicates(evaledTypes).filter(
+        let withoutDuplicates = removeDuplicates(evaledTypes).filter(
           (t) => t._type !== "never"
         );
 
         // unknown and any are the most general types
-        if (withoutDuplicates.some((t) => t._type === "unknown")) {
-          return { type: T.unknown(), env };
-        }
         if (withoutDuplicates.some((t) => t._type === "any")) {
           return { type: T.any(), env };
+        }
+        if (withoutDuplicates.some((t) => t._type === "unknown")) {
+          return { type: T.unknown(), env };
         }
 
         // simplify true | false to boolean
         console.log(withoutDuplicates);
         if (
-          withoutDuplicates.length === 2 &&
           withoutDuplicates.some((t) => deepEquals(t, T.booleanLit(true))) &&
           withoutDuplicates.some((t) => deepEquals(t, T.booleanLit(false)))
         ) {
-          return { type: T.boolean(), env };
+          withoutDuplicates = withoutDuplicates.filter(
+            (t) =>
+              !deepEquals(t, T.booleanLit(true)) &&
+              !deepEquals(t, T.booleanLit(false))
+          );
+          withoutDuplicates.push(T.boolean());
         }
 
         // if there is only one type, return it
