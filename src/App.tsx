@@ -23,8 +23,11 @@ enableLegendStateReact();
 const EXAMPLES = [
   {
     name: "Object type",
-    envSource: "",
-    typeSource: "{ a: 42, b: { c: 'howdy', d: true | false } }",
+    envSource: `type Box = { value: number };
+type Some<T> = { type: "Some"; value: T };
+type Yo = Some<123> extends Box ? true : false;
+    `,
+    typeSource: "Yo",
   },
   {
     name: "Simplify union",
