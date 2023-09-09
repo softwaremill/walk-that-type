@@ -97,6 +97,16 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
       () => none
     )
     .with({ _type: "array" }, (t) => chooseNodeToEval(env, t.elementType))
+    .with({ _type: "object" }, (t) => {
+      for (const [, v] of t.properties) {
+        const res = chooseNodeToEval(env, v);
+        if (res.isSome) {
+          return res;
+        }
+      }
+
+      return none;
+    })
     .with({ _type: "tuple" }, (t) => {
       for (const el of t.elements) {
         if (el._type === "rest") {
@@ -105,7 +115,7 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
           }
           const nodeToEvalInRest = chooseNodeToEval(env, el.type);
           if (nodeToEvalInRest.isSome) {
-            return chooseNodeToEval(env, el.type);
+            return nodeToEvalInRest;
           } else {
             return some(node.nodeId);
           }
@@ -123,6 +133,21 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
       throw new Error(`this shouldn't happen: ${node} in chooseNodeToEval`);
     })
     .with({ _type: "conditionalType" }, (t) => {
+      // Before evaluating the conditional type, check if left-hand side or right-hand side
+      // of extends needs to be evaluated. `thenType` or `elseType` will be evaluated
+      // later down the line so it shouldn't be done here.
+      const checkType = t.checkType;
+      let res = chooseNodeToEval(env, checkType);
+      if (res.isSome) {
+        return res;
+      }
+
+      const extendsType = t.extendsType;
+      res = chooseNodeToEval(env, extendsType);
+      if (res.isSome) {
+        return res;
+      }
+
       return some(t.nodeId);
     })
     .with({ _type: "typeReference" }, (t) => some(t.nodeId))
@@ -330,6 +355,7 @@ export const getEvalTrace = (
   for (let i = 0; i < EVAL_LIMIT; i++) {
     currentStep = chooseNodeToEval(currentEnv, currentType).flatMap(
       (nodeId) => {
+        console.log("YO");
         return calculateNextStep(nodeId, currentType, currentEnv);
       }
     );

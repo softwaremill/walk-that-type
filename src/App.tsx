@@ -22,6 +22,25 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
+    name: "Object type",
+    envSource: `type Box = { value: number };
+type Some<T> = { type: "Some"; value: T };
+type Yo = Some<123> extends Box ? true : false;
+    `,
+    typeSource: "Yo",
+  },
+  {
+    name: "Object type2",
+    envSource: "",
+    typeSource: `{
+      a: 42,
+      b: {
+        c: 123,
+        d: true | false
+      }
+    }`,
+  },
+  {
     name: "Simplify union",
     envSource: "type constNever<T> = never;",
     typeSource: "42 | 'hello' | 'hello' | never | constNever<42>",

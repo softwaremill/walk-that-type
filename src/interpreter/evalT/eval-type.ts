@@ -53,6 +53,18 @@ export const evalT = (
         env,
       }))
     )
+
+    .with({ _type: "object" }, (t) =>
+      sequence(
+        t.properties.map(([k, v]) =>
+          evalT(env, v).map(({ type }) => [k, type] as const)
+        )
+      ).map((props) => ({
+        type: T.object(props as [string, TypeNode][]),
+        env,
+      }))
+    )
+
     .with({ _type: "conditionalType" }, (t) =>
       Do(() => {
         const lhs = evalT(env, t.checkType).bind().type;
@@ -118,6 +130,7 @@ export const evalT = (
         }
 
         // simplify true | false to boolean
+        console.log(withoutDuplicates);
         if (
           withoutDuplicates.some((t) => deepEquals(t, T.booleanLit(true))) &&
           withoutDuplicates.some((t) => deepEquals(t, T.booleanLit(false)))
