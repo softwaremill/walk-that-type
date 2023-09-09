@@ -5,9 +5,9 @@
 - [x] spread operator for tuples (eg. used for concat)
 - [ ] infer
   - [x] tuples
-  - [ ] objects
+  - [x] objects
   - [ ] functions
-- [ ] object types
+- [x] object types
 - [x] union types
 - [ ] distributed union
 - [ ] intersection types
