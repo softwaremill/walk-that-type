@@ -360,10 +360,6 @@ export const mapType = (
       return {
         ...type,
         properties,
-        // FIXME: do sth so that this repetition is not needed
-        text: () => `{
-          ${properties.map(([key, value]) => `${key}: ${value.text()}`)}
-          }`,
       };
     }
 
@@ -572,8 +568,14 @@ export const printTypeNode = (t: TypeNode): string => {
     case "any":
     case "unknown":
     case "never":
-    case "object":
       return t.text();
+
+    case "object":
+      return `{
+        ${t.properties.map(
+          ([key, value]) => `${key}1: ${printTypeNode(value)}`
+        )}
+      }`;
 
     case "tuple":
       return `[${t.elements.map(printTypeNode).join(", ")}]`;
