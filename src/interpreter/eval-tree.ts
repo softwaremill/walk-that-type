@@ -17,6 +17,7 @@ import { P, match } from "ts-pattern";
 import { v4 as uuid } from "uuid";
 import { evalT } from "./evalT/eval-type";
 import { extendsT } from "./extendsT/extendsT";
+import { standardTypes } from "./evalT/global-types";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 
@@ -81,11 +82,16 @@ export type EvalStep = {
     | {
         _type: "substituteWithDefinition";
         name: string;
-
         evalTrace: EvalTrace;
       }
     | { _type: "applyRestOperator"; restElement: TypeNode }
-    | { _type: "simplifyUnion"; union: TypeNode };
+    | { _type: "simplifyUnion"; union: TypeNode }
+    | {
+        _type: "useGlobalType";
+        text: string;
+        docsUrl: string;
+        evalTrace: EvalTrace;
+      };
 };
 
 export type EvalTrace = [TypeNode, ...EvalStep[]];
@@ -275,6 +281,36 @@ const calculateNextStep = (
         } as EvalStep);
       });
     })
+    .when(
+      (t) => t._type === "typeReference" && standardTypes[t.name],
+      (tt) => {
+        if (tt._type !== "typeReference" || !standardTypes[tt.name]) {
+          throw new Error("impossible");
+        }
+        const standardTypeImpl = standardTypes[tt.name];
+
+        if (!standardTypeImpl) {
+          throw new Error("impossible");
+        }
+
+        const newType = standardTypeImpl
+          .fn(tt.typeArguments)
+          .expect("Error while applying standard type");
+        const fullyEvaled = evalT(env, newType).unwrap().type;
+
+        return some({
+          nodeToEval: targetNodeId,
+          result: replaceNode(type, targetNodeId, fullyEvaled),
+          resultEnv: env,
+          evalDescription: {
+            _type: "useGlobalType",
+            text: `${tt.text()}`,
+            docsUrl: standardTypeImpl.docsUrl,
+            evalTrace: getEvalTrace(newType, env),
+          },
+        });
+      }
+    )
     .with(P.shape({ _type: "typeReference" }).select(), (tt) => {
       const typeDeclaration = env[tt.name];
 
@@ -320,7 +356,7 @@ const calculateNextStep = (
           name: `${tt.text()}`,
           evalTrace: getEvalTrace(updated, newEnv),
         },
-      } as EvalStep);
+      });
     })
 
     .with(P.shape({ _type: "union" }).select(), (tt) =>
@@ -355,7 +391,6 @@ export const getEvalTrace = (
   for (let i = 0; i < EVAL_LIMIT; i++) {
     currentStep = chooseNodeToEval(currentEnv, currentType).flatMap(
       (nodeId) => {
-        console.log("YO");
         return calculateNextStep(nodeId, currentType, currentEnv);
       }
     );

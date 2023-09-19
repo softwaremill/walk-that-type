@@ -8,6 +8,7 @@ import { deepEquals, T, TypeNode } from "../type-node";
 import { Do, err, ok, Result } from "this-is-ok/result";
 import { sequence } from "../type-node/map-AST-to-type-nodes";
 import { extendsT } from "../extendsT/extendsT";
+import { standardTypes } from "./global-types";
 
 const removeDuplicates = (arr: TypeNode[]): TypeNode[] => {
   const uniq: TypeNode[] = [];
@@ -99,6 +100,13 @@ export const evalT = (
       });
     })
     .with({ _type: "typeReference" }, (t) => {
+      const globalTypeImpl = standardTypes[t.name];
+      if (globalTypeImpl) {
+        return globalTypeImpl.fn(t.typeArguments).flatMap((type) => {
+          return evalT(env, type);
+        });
+      }
+
       const typeDeclaration = env[t.name];
       if (!typeDeclaration) {
         return err(new Error(`unknown type ${t.name}`));
@@ -130,7 +138,6 @@ export const evalT = (
         }
 
         // simplify true | false to boolean
-        console.log(withoutDuplicates);
         if (
           withoutDuplicates.some((t) => deepEquals(t, T.booleanLit(true))) &&
           withoutDuplicates.some((t) => deepEquals(t, T.booleanLit(false)))

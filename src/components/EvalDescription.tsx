@@ -26,10 +26,11 @@ export const EvalDescription = ({
       <Card shadow="sm" padding="lg" radius="md" withBorder>
         <Title color="#35545a" order={6} mb={6}>
           {match(desc._type)
-            .with("conditionalType", () => `Conditional type`)
-            .with("substituteWithDefinition", () => `Definition Substitution`)
-            .with("applyRestOperator", () => `Apply rest operator`)
-            .with("simplifyUnion", () => `Simplify union type`)
+            .with("conditionalType", () => "Conditional type")
+            .with("substituteWithDefinition", () => "Definition Substitution")
+            .with("applyRestOperator", () => "Apply rest operator")
+            .with("simplifyUnion", () => "Simplify union type")
+            .with("useGlobalType", () => "Global type")
             .exhaustive()}
         </Title>
 
@@ -111,6 +112,33 @@ export const EvalDescription = ({
               <Text color="gray.6" size={13}>
                 Substituting <Code>{name}</Code> with the definition.
               </Text>
+            )
+          )
+          .with(
+            {
+              _type: "useGlobalType",
+              text: P.select("text"),
+              docsUrl: P.select("docsUrl"),
+            },
+            ({ text, docsUrl }) => (
+              <>
+                <Text color="gray.6" size={13}>
+                  Applying built-in type <Code>{text}</Code>.
+                </Text>
+                <Text color="gray.6" size={13}>
+                  Learn more about it{" "}
+                  <Text
+                    size={13}
+                    component="a"
+                    underline
+                    target="_blank"
+                    href={docsUrl}
+                  >
+                    here
+                  </Text>
+                  .
+                </Text>
+              </>
             )
           )
           .with(

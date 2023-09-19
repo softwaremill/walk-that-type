@@ -145,4 +145,80 @@ describe("eval", () => {
       ])
     );
   });
+
+  test("Uppercase", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Uppercase", [T.stringLit("hello")])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("HELLO"));
+
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Uppercase", [T.stringLit("HELLO")])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("HELLO"));
+
+    expect(
+      evalT(EMPTY_ENV, T.typeReference("Uppercase", [T.stringLit("")])).unwrap()
+        .type
+    ).equalsTypeNode(T.stringLit(""));
+  });
+
+  test("Lowercase", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Lowercase", [T.stringLit("HELLO")])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("hello"));
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Lowercase", [T.stringLit("hello")])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("hello"));
+    expect(
+      evalT(EMPTY_ENV, T.typeReference("Lowercase", [T.stringLit("")])).unwrap()
+        .type
+    ).equalsTypeNode(T.stringLit(""));
+  });
+
+  test("Capitalize", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Capitalize", [T.stringLit("hello")])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("Hello"));
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Capitalize", [T.stringLit("heLLO")])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("HeLLO"));
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Capitalize", [T.stringLit("")])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit(""));
+  });
+
+  test("Uncapitalize", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Uncapitalize", [T.stringLit("HEllo")])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("hEllo"));
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Uncapitalize", [T.stringLit("")])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit(""));
+  });
 });

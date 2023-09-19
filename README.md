@@ -1,3 +1,21 @@
+# Walk That Type
+
+> 🚧 Warning: this project is still in early development stage. It might include bugs and missing features (see [TODOs](#todos) section).
+
+## Contributing
+
+1. Fork this repo
+2. Create a new branch, push your changes, and open a PR.
+
+Feel free to report any issues or feature requests using Github issues.
+
+## Development setup
+
+1. Install [pnpm](https://pnpm.js.org/en/installation)
+2. Run `pnpm install`
+3. Run `pnpm dev` to start the dev server
+4. Run `pnpm test` to run tests (in watch mode)
+
 # TODOs:
 
 - [x] format displayed code
@@ -9,31 +27,35 @@
   - [ ] functions
 - [x] object types
 - [x] union types
+- [ ] mapped types
 - [ ] distributed union
 - [ ] intersection types
 - [ ] function types
 - [ ] type variance
 - [ ] readonly
+- [ ] optional properties
 - [ ] template string literals
-- [ ] mapped types
 - [ ] built-in types
-  - [ ] Partial
-  - [ ] Uppercase
-  - [ ] Lowercase
-  - [ ] Capitalize
-  - [ ] Uncapitalize
-  - [ ] Extract
-  - [ ] Exclude
-  - [ ] Pick
-  - [ ] Omit
-  - [ ] Awaited
+  - [x] Uppercase
+  - [x] Lowercase
+  - [x] Capitalize
+  - [x] Uncapitalize
+  - [ ] Extract, Exclude
+  - [ ] Pick, Omit
+  - [ ] Partial, Required
+  - [ ] Readonly
+  - [ ] NonNullable
+  - [ ] Record
+  - [ ] Awaited, Promise, PromiseLike
+  - [ ] Parameters, ReturnType
 - [] extends
   - [x] any, unknown, never
   - [x] common sets such as number, string
   - [x] literal types
-  - [ ] objects
+  - [x] objects
   - [x] union types
   - [ ] intersection types
+  - [ ] function types
 - [x] conditional types
 - [ ] Test it with easy type challenges
 
@@ -47,3 +69,7 @@
 - Add traverse logic in `traverse` function.
 - In `eval-tree.ts` add new cases in `calculateNextStep` and `chooseNodeToEval`.
 - Finally, update `EvalDescription` component.
+
+## Implementing built-in types
+
+To add a missing built-in type (e.g. `Pick`) you just need to implement it in the `global-types.ts` files according to `GlobalTypeFn` type.

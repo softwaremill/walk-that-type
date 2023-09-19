@@ -103,15 +103,18 @@ const theme: PrismTheme = {
 };
 
 const withTypeDeclaration = (code: string) => `type _dummy = ${code}`;
-const withoutTypeDeclaration = (code: string) =>
-  code.split("type _dummy = ")[1];
+const withoutTypeDeclaration = (code: string) => code.split("type _dummy =")[1];
 
 export const CodeBlock = ({ code }: { code: string }) => {
   const [formattedCode, setFormattedCode] = useState<string | null>(null);
   useEffect(() => {
-    formatCode(withTypeDeclaration(code)).then((formatted) =>
-      setFormattedCode(withoutTypeDeclaration(formatted))
-    );
+    formatCode(withTypeDeclaration(code))
+      .then((formatted) => {
+        return setFormattedCode(withoutTypeDeclaration(formatted));
+      })
+      .catch((e) => {
+        console.error(e);
+      });
   }, [code]);
 
   return formattedCode ? (

@@ -1,4 +1,4 @@
-import { Button, Divider, Flex, Grid, Stack, Title } from "@mantine/core";
+import { Button, Divider, Flex, Grid, Stack, Text, Title } from "@mantine/core";
 
 import { printTypeNode } from "./interpreter/type-node";
 import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
@@ -22,12 +22,9 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
-    name: "Object type",
-    envSource: `type Box = { value: number };
-type Some<T> = { type: "Some"; value: T };
-type Yo = Some<123> extends Box ? true : false;
-    `,
-    typeSource: "Yo",
+    name: "Standard types",
+    envSource: "",
+    typeSource: `Uppercase<"hello"> | Lowercase<"HowDY"> | Capitalize<"hey"> | Uncapitalize<"Hey">`,
   },
   {
     name: "Object type2",
@@ -173,11 +170,19 @@ const App = () => {
         </Grid.Col>
       </Grid>
 
-      {/* <Flex pos={"fixed"} bottom={16} w="100%" justify="center">
+      <Flex pos={"fixed"} bottom={16} w="100%" justify="center">
         <Text size={14} color="gray.7">
-          Made in 🇵🇱 by Mieszko Sabo
+          Created by{" "}
+          <Text
+            weight="bold"
+            component="a"
+            href="https://softwaremill.com/"
+            target="_blank"
+          >
+            SoftwareMill
+          </Text>
         </Text>
-      </Flex> */}
+      </Flex>
     </Stack>
   );
 };
@@ -191,8 +196,8 @@ function renderTrace(trace: EvalTrace) {
       {steps.map((step, idx) => (
         <Fragment key={`${step.result.nodeId}-${idx}`}>
           <EvalDescription desc={step.evalDescription} />
-
-          {step.evalDescription._type === "substituteWithDefinition" && (
+          {(step.evalDescription._type === "substituteWithDefinition" ||
+            step.evalDescription._type === "useGlobalType") && (
             <Accordion>
               <Accordion.Item value="expand">
                 <Accordion.Control>Step into evaluation</Accordion.Control>
@@ -202,8 +207,10 @@ function renderTrace(trace: EvalTrace) {
               </Accordion.Item>
             </Accordion>
           )}
-
+          aa
+          <pre>{printTypeNode(step.result)}</pre>
           <CodeBlock code={printTypeNode(step.result)} />
+          bb
         </Fragment>
       ))}
     </Stack>
