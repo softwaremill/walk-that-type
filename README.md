@@ -1,5 +1,7 @@
 # Walk That Type
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/a9f2c2f3-0a4c-4429-949f-beb6225c7171/deploy-status)](https://app.netlify.com/sites/walk-that-type/deploys)
+
 > 🚧 Warning: this project is still in early development stage. It might include bugs and missing features (see [TODOs](#todos) section).
 
 ## Contributing
