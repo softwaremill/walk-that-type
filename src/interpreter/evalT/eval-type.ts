@@ -8,7 +8,7 @@ import { deepEquals, T, TypeNode } from "../type-node";
 import { Do, err, ok, Result } from "this-is-ok/result";
 import { sequence } from "../type-node/map-AST-to-type-nodes";
 import { extendsT } from "../extendsT/extendsT";
-import { standardTypes } from "./global-types";
+import { intrinsicTypes } from "./intrinsic-types";
 
 const removeDuplicates = (arr: TypeNode[]): TypeNode[] => {
   const uniq: TypeNode[] = [];
@@ -100,7 +100,7 @@ export const evalT = (
       });
     })
     .with({ _type: "typeReference" }, (t) => {
-      const globalTypeImpl = standardTypes[t.name];
+      const globalTypeImpl = intrinsicTypes[t.name];
       if (globalTypeImpl) {
         return globalTypeImpl.fn(t.typeArguments).flatMap((type) => {
           return evalT(env, type);

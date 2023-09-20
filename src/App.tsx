@@ -22,7 +22,7 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
-    name: "Standard types",
+    name: "Intrinsic types",
     envSource: "",
     typeSource: `Uppercase<"hello"> | Lowercase<"HowDY"> | Capitalize<"hey"> | Uncapitalize<"Hey">`,
   },
@@ -196,8 +196,7 @@ function renderTrace(trace: EvalTrace) {
       {steps.map((step, idx) => (
         <Fragment key={`${step.result.nodeId}-${idx}`}>
           <EvalDescription desc={step.evalDescription} />
-          {(step.evalDescription._type === "substituteWithDefinition" ||
-            step.evalDescription._type === "useGlobalType") && (
+          {step.evalDescription._type === "substituteWithDefinition" && (
             <Accordion>
               <Accordion.Item value="expand">
                 <Accordion.Control>Step into evaluation</Accordion.Control>
@@ -207,10 +206,8 @@ function renderTrace(trace: EvalTrace) {
               </Accordion.Item>
             </Accordion>
           )}
-          aa
-          <pre>{printTypeNode(step.result)}</pre>
+
           <CodeBlock code={printTypeNode(step.result)} />
-          bb
         </Fragment>
       ))}
     </Stack>

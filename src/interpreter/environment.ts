@@ -3,6 +3,7 @@ import ts from "typescript";
 import { mapASTToTypeNodes } from "./type-node/map-AST-to-type-nodes";
 import { T, TypeNode } from "./type-node";
 import { Option, of } from "this-is-ok/option";
+import { globalTypes } from "./global-types";
 
 export type TypeDeclaration = Extract<TypeNode, { _type: "typeDeclaration" }>;
 
@@ -34,7 +35,9 @@ export const createEnvironment = (
     return err(e as Error);
   }
 
-  return ok(env);
+  const envWithGlobalTypes = extendEnvironment(env, globalTypes);
+
+  return ok(envWithGlobalTypes);
 };
 
 export const addToEnvironment = (

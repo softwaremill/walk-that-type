@@ -17,7 +17,7 @@ import { P, match } from "ts-pattern";
 import { v4 as uuid } from "uuid";
 import { evalT } from "./evalT/eval-type";
 import { extendsT } from "./extendsT/extendsT";
-import { standardTypes } from "./evalT/global-types";
+import { intrinsicTypes } from "./evalT/intrinsic-types";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 
@@ -87,10 +87,9 @@ export type EvalStep = {
     | { _type: "applyRestOperator"; restElement: TypeNode }
     | { _type: "simplifyUnion"; union: TypeNode }
     | {
-        _type: "useGlobalType";
+        _type: "useIntrinsicType";
         text: string;
         docsUrl: string;
-        evalTrace: EvalTrace;
       };
 };
 
@@ -282,12 +281,12 @@ const calculateNextStep = (
       });
     })
     .when(
-      (t) => t._type === "typeReference" && standardTypes[t.name],
+      (t) => t._type === "typeReference" && intrinsicTypes[t.name],
       (tt) => {
-        if (tt._type !== "typeReference" || !standardTypes[tt.name]) {
+        if (tt._type !== "typeReference" || !intrinsicTypes[tt.name]) {
           throw new Error("impossible");
         }
-        const standardTypeImpl = standardTypes[tt.name];
+        const standardTypeImpl = intrinsicTypes[tt.name];
 
         if (!standardTypeImpl) {
           throw new Error("impossible");
@@ -303,7 +302,7 @@ const calculateNextStep = (
           result: replaceNode(type, targetNodeId, fullyEvaled),
           resultEnv: env,
           evalDescription: {
-            _type: "useGlobalType",
+            _type: "useIntrinsicType",
             text: `${tt.text()}`,
             docsUrl: standardTypeImpl.docsUrl,
             evalTrace: getEvalTrace(newType, env),

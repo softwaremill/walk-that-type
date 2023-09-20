@@ -30,7 +30,7 @@ export const EvalDescription = ({
             .with("substituteWithDefinition", () => "Definition Substitution")
             .with("applyRestOperator", () => "Apply rest operator")
             .with("simplifyUnion", () => "Simplify union type")
-            .with("useGlobalType", () => "Global type")
+            .with("useIntrinsicType", () => "Intrinsic type")
             .exhaustive()}
         </Title>
 
@@ -116,7 +116,7 @@ export const EvalDescription = ({
           )
           .with(
             {
-              _type: "useGlobalType",
+              _type: "useIntrinsicType",
               text: P.select("text"),
               docsUrl: P.select("docsUrl"),
             },

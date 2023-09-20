@@ -1,13 +1,13 @@
 import { Result, err, ok } from "this-is-ok/result";
 import { T, TypeNode } from "../type-node";
 
-type GlobalTypeFn = (args: TypeNode[]) => Result<TypeNode, Error>;
-export type GlobalTypes = Record<
+type IntrinsicTypeFn = (args: TypeNode[]) => Result<TypeNode, Error>;
+export type IntrinsicTypes = Record<
   string,
-  undefined | { fn: GlobalTypeFn; docsUrl: string }
+  undefined | { fn: IntrinsicTypeFn; docsUrl: string }
 >;
 
-const uppercase: GlobalTypeFn = (args) => {
+const uppercase: IntrinsicTypeFn = (args) => {
   if (args.length !== 1) {
     return err(new Error("Uppercase expects 1 argument"));
   }
@@ -21,7 +21,7 @@ const uppercase: GlobalTypeFn = (args) => {
   return ok(T.stringLit(arg.value.toLocaleUpperCase()));
 };
 
-const lowercase: GlobalTypeFn = (args) => {
+const lowercase: IntrinsicTypeFn = (args) => {
   if (args.length !== 1) {
     return err(new Error("Lowercase expects 1 argument"));
   }
@@ -35,7 +35,7 @@ const lowercase: GlobalTypeFn = (args) => {
   return ok(T.stringLit(arg.value.toLocaleLowerCase()));
 };
 
-const capitalize: GlobalTypeFn = (args) => {
+const capitalize: IntrinsicTypeFn = (args) => {
   if (args.length !== 1) {
     return err(new Error("Capitalize expects 1 argument"));
   }
@@ -51,7 +51,7 @@ const capitalize: GlobalTypeFn = (args) => {
   );
 };
 
-const uncapitalize: GlobalTypeFn = (args) => {
+const uncapitalize: IntrinsicTypeFn = (args) => {
   if (args.length !== 1) {
     return err(new Error("uppercase expects 1 argument"));
   }
@@ -67,7 +67,7 @@ const uncapitalize: GlobalTypeFn = (args) => {
   );
 };
 
-export const standardTypes: GlobalTypes = {
+export const intrinsicTypes: IntrinsicTypes = {
   Uppercase: {
     fn: uppercase,
     docsUrl:
