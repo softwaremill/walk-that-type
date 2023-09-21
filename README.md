@@ -30,7 +30,7 @@ Feel free to report any issues or feature requests using Github issues.
 - [x] object types
 - [x] union types
 - [ ] mapped types
-- [ ] distributed union
+- [x] distributed union
 - [ ] intersection types
 - [ ] function types
 - [ ] type variance

@@ -222,3 +222,73 @@ describe("eval", () => {
     ).equalsTypeNode(T.stringLit(""));
   });
 });
+
+describe("distributive union", () => {
+  test("ToArray<T> with naked type", () => {
+    expect(
+      evalT(
+        createEnvironment(
+          `type ToArray<Type> = Type extends any ? Type[] : never;`
+        ).unwrap(),
+        T.typeReference("ToArray", [T.union([T.string(), T.number()])])
+      ).unwrap().type
+    ).equalsTypeNode(T.union([T.array(T.string()), T.array(T.number())]));
+  });
+
+  test("ToArrayNonDist<T> with non-naked type", () => {
+    expect(
+      evalT(
+        createEnvironment(
+          `type ToArrayNonDist<Type> = [Type] extends [any] ? Type[] : never;`
+        ).unwrap(),
+        T.typeReference("ToArrayNonDist", [T.union([T.string(), T.number()])])
+      ).unwrap().type
+    ).equalsTypeNode(T.array(T.union([T.string(), T.number()])));
+  });
+
+  test("multiple union arguments, but only one distributive union", () => {
+    expect(
+      evalT(
+        createEnvironment(
+          `type ToArray<T1, T2> = T1 extends any ? 
+          [T1, T2]
+          : never;`
+        ).unwrap(),
+        T.typeReference("ToArray", [
+          T.union([T.string(), T.number()]),
+          T.union([T.numberLit(1), T.numberLit(2)]),
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.union([
+        T.tuple([T.string(), T.union([T.numberLit(1), T.numberLit(2)])]),
+        T.tuple([T.number(), T.union([T.numberLit(1), T.numberLit(2)])]),
+      ])
+    );
+  });
+
+  test("double distributive union", () => {
+    expect(
+      evalT(
+        createEnvironment(
+          `type ToArray<T1, T2> = T1 extends any ? 
+          T2 extends any 
+              ? [T1, T2]
+              : never
+          : never;`
+        ).unwrap(),
+        T.typeReference("ToArray", [
+          T.union([T.string(), T.number()]),
+          T.union([T.numberLit(1), T.numberLit(2)]),
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.union([
+        T.tuple([T.string(), T.numberLit(1)]),
+        T.tuple([T.string(), T.numberLit(2)]),
+        T.tuple([T.number(), T.numberLit(1)]),
+        T.tuple([T.number(), T.numberLit(2)]),
+      ])
+    );
+  });
+});
