@@ -2,8 +2,9 @@ import { describe, test, expect } from "vitest";
 import { evalT } from "./eval-type";
 import { Environment, createEnvironment } from "../environment";
 import { T, deepEquals } from "../type-node";
+import { globalTypes } from "../global-types";
 
-export const EMPTY_ENV: Environment = {};
+export const EMPTY_ENV: Environment = globalTypes;
 
 describe("eval", () => {
   test("Literal types", () => {
@@ -290,5 +291,31 @@ describe("distributive union", () => {
         T.tuple([T.number(), T.numberLit(2)]),
       ])
     );
+  });
+});
+
+describe("global types", () => {
+  test("Exclude", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Exclude", [
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.stringLit("a"),
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(T.union([T.stringLit("b"), T.stringLit("c")]));
+  });
+
+  test("Extract", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Extract", [
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.union([T.stringLit("a"), T.stringLit("f")]),
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("a"));
   });
 });

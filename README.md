@@ -42,14 +42,14 @@ Feel free to report any issues or feature requests using Github issues.
   - [x] Lowercase
   - [x] Capitalize
   - [x] Uncapitalize
-  - [ ] Extract, Exclude
-  - [ ] Pick, Omit
-  - [ ] Partial, Required
-  - [ ] Readonly
-  - [ ] NonNullable
+  - [x] Extract, Exclude
+  - [ ] Pick, Omit (needs mapped types)
+  - [ ] Partial, Required (needs optional properties)
+  - [ ] Readonly (needs readonly)
+  - [ ] NonNullable (needs intersection and `{}` type)
   - [ ] Record
   - [ ] Awaited, Promise, PromiseLike
-  - [ ] Parameters, ReturnType
+  - [ ] Parameters, ReturnType (needs function types)
 - [] extends
   - [x] any, unknown, never
   - [x] common sets such as number, string
