@@ -4,12 +4,11 @@ import {
   Environment,
   extendEnvironment,
 } from "../environment";
-import { deepEquals, T, traverse, TypeNode } from "../type-node";
+import { deepEquals, T, TypeNode } from "../type-node";
 import { Do, err, ok, Result } from "this-is-ok/result";
 import { sequence } from "../type-node/map-AST-to-type-nodes";
 import { extendsT } from "../extendsT/extendsT";
 import { intrinsicTypes } from "./intrinsic-types";
-import { cartesianProduct } from "../../utils/cartesianProduct";
 import {
   checkForDistributedUnion,
   distributeUnion,
