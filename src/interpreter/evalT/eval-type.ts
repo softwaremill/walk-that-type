@@ -106,7 +106,12 @@ export const evalT = (
     .with({ _type: "typeReference" }, (t) => {
       const intrinsicTypeImpl = intrinsicTypes[t.name];
       if (intrinsicTypeImpl) {
-        return intrinsicTypeImpl.fn(t.typeArguments).flatMap((type) => {
+        const evaledArgs = sequence(
+          t.typeArguments.map((type) =>
+            evalT(env, type).map(({ type }) => type)
+          )
+        ).expect("Could not eval type arguments for intrinsic type");
+        return intrinsicTypeImpl.fn(evaledArgs).flatMap((type) => {
           return evalT(env, type);
         });
       }
@@ -170,6 +175,37 @@ export const evalT = (
         return withoutDuplicates.length === 1
           ? { type: withoutDuplicates[0], env }
           : { type: T.union(withoutDuplicates), env };
+      });
+    })
+
+    .with({ _type: "mappedType" }, (t) => {
+      return Do(() => {
+        const constraintUnion = evalT(env, t.constraint).bind().type as Extract<
+          TypeNode,
+          { _type: "union" }
+        >;
+        return ok({
+          type: T.object(
+            constraintUnion.members.map((member) => {
+              // sub `key` for member and eval type
+              const newEnv = { ...env };
+              addToEnvironment(newEnv, t.keyName, member);
+
+              console.log(t.remapping, newEnv);
+              const key = t.remapping
+                ? evalT(newEnv, t.remapping).bind().type
+                : member;
+
+              if (key._type === "stringLiteral") {
+                // TODO: handle numberLiteral and never
+                return [key.value, evalT(newEnv, t.type).bind().type];
+              } else {
+                throw new Error("no bueno");
+              }
+            })
+          ),
+          env,
+        });
       });
     })
 

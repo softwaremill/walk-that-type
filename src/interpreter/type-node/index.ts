@@ -49,6 +49,13 @@ type TypeNodeBase<T> = T &
         _type: "rest";
         type: TypeNodeBase<T>;
       }
+    | {
+        _type: "mappedType";
+        keyName: string;
+        constraint: TypeNodeBase<T>;
+        remapping?: TypeNodeBase<T>;
+        type: TypeNodeBase<T>;
+      }
   );
 
 export type TypeNode = TypeNodeBase<{ text: () => string; nodeId: NodeId }>;
@@ -227,6 +234,25 @@ const objectType = (
     }`,
 });
 
+const mappedType = (
+  keyName: string,
+  constraint: TypeNode,
+  remapping: TypeNode | undefined,
+  type: TypeNode
+): TypeNode => ({
+  _type: "mappedType",
+  keyName,
+  constraint,
+  remapping,
+  type,
+  text: () => `{
+    [${keyName} in ${constraint.text()}${
+      remapping ? "as " + remapping.text() : ""
+    }]: ${type.text()}
+  }`,
+  nodeId: uuid(),
+});
+
 export const T = {
   typeDeclaration,
   numberLit,
@@ -250,6 +276,7 @@ export const T = {
   rest,
   array,
   object: objectType,
+  mappedType,
 };
 
 export const traverse = (type: TypeNode, f: (t: TypeNode) => void) => {
@@ -416,6 +443,19 @@ export const mapType = (
       };
     }
 
+    case "mappedType": {
+      const constraint = mapType(type.constraint, f);
+      const remapping = type.remapping ? mapType(type.remapping, f) : undefined;
+      const type_ = mapType(type.type, f);
+
+      return {
+        ...type,
+        constraint,
+        remapping,
+        type: type_,
+      };
+    }
+
     case "rest":
       return {
         ...type,
@@ -503,6 +543,15 @@ export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
         extendsType: withoutNodeIds(extendsType),
         thenType: withoutNodeIds(thenType),
         elseType: withoutNodeIds(elseType),
+      };
+    }
+    case "mappedType": {
+      const { nodeId, constraint, remapping, type: t, ...rest } = type;
+      return {
+        ...rest,
+        constraint: withoutNodeIds(constraint),
+        remapping: remapping ? withoutNodeIds(remapping) : undefined,
+        type: withoutNodeIds(t),
       };
     }
   }
@@ -600,6 +649,13 @@ export const printTypeNode = (t: TypeNode): string => {
       return `${printTypeNode(t.checkType)} extends ${printTypeNode(
         t.extendsType
       )} ? ${printTypeNode(t.thenType)} : ${printTypeNode(t.elseType)}`;
+
+    case "mappedType":
+      return `{
+        [${t.keyName} in ${printTypeNode(t.constraint)}${
+          t.remapping ? "as " + printTypeNode(t.remapping) : ""
+        }]: ${printTypeNode(t.type)}
+      }`;
 
     case "rest":
       return `...${printTypeNode(t.type)}`;

@@ -319,3 +319,45 @@ describe("global types", () => {
     ).equalsTypeNode(T.stringLit("a"));
   });
 });
+
+describe("mapped types", () => {
+  test("basic mapped type", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.mappedType(
+          "k",
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          undefined,
+          T.typeReference("k", [])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.object([
+        ["a", T.stringLit("a")],
+        ["b", T.stringLit("b")],
+        ["c", T.stringLit("c")],
+      ])
+    );
+  });
+
+  test("mapped type with remapping", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.mappedType(
+          "k",
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.typeReference("Uppercase", [T.typeReference("k", [])]),
+          T.string()
+        )
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.object([
+        ["A", T.string()],
+        ["B", T.string()],
+        ["C", T.string()],
+      ])
+    );
+  });
+});

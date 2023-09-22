@@ -22,6 +22,13 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
+    name: "Mapped types",
+    envSource: `type Example = {
+      [k in "a" | "b" as 41]: 42
+    };`,
+    typeSource: `Example`,
+  },
+  {
     name: "Distributed union types",
     envSource: `type ToArray<T1, T2> = T1 extends any ? 
     T2 extends any 
