@@ -360,4 +360,21 @@ describe("mapped types", () => {
       ])
     );
   });
+
+  test("mapped type: filtering with remapping", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.mappedType(
+          "k",
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.typeReference("k", []),
+          T.typeReference("Exclude", [
+            T.typeReference("k", []),
+            T.union([T.stringLit("a"), T.stringLit("b")]),
+          ])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.object([["c", T.stringLit("c")]]));
+  });
 });

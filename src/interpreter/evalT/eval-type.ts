@@ -186,23 +186,24 @@ export const evalT = (
         >;
         return ok({
           type: T.object(
-            constraintUnion.members.map((member) => {
-              // sub `key` for member and eval type
-              const newEnv = { ...env };
-              addToEnvironment(newEnv, t.keyName, member);
+            constraintUnion.members
+              .map((member) => {
+                // sub `key` for member and eval type
+                const newEnv = { ...env };
+                addToEnvironment(newEnv, t.keyName, member);
 
-              console.log(t.remapping, newEnv);
-              const key = t.remapping
-                ? evalT(newEnv, t.remapping).bind().type
-                : member;
+                const key = t.remapping
+                  ? evalT(newEnv, t.remapping).bind().type
+                  : member;
 
-              if (key._type === "stringLiteral") {
-                // TODO: handle numberLiteral and never
-                return [key.value, evalT(newEnv, t.type).bind().type];
-              } else {
-                throw new Error("no bueno");
-              }
-            })
+                if (key._type === "stringLiteral") {
+                  return [key.value, evalT(newEnv, t.type).bind().type];
+                } else {
+                  return null;
+                }
+              })
+              .filter((x): x is [string, TypeNode] => x !== null)
+              .filter(([, type]) => type._type !== "never")
           ),
           env,
         });
