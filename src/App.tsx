@@ -22,6 +22,15 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
+    name: "Distributed union types",
+    envSource: `type ToArray<T1, T2> = T1 extends any ? 
+    T2 extends any 
+        ? [T1, T2]
+        : never
+    : never;`,
+    typeSource: `ToArray<string | number, 1 | 2>`,
+  },
+  {
     name: "Intrinsic types",
     envSource: "",
     typeSource: `Uppercase<"hello"> | Lowercase<"HowDY"> | Capitalize<"hey"> | Uncapitalize<"Hey">`,

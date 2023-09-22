@@ -31,6 +31,7 @@ export const EvalDescription = ({
             .with("applyRestOperator", () => "Apply rest operator")
             .with("simplifyUnion", () => "Simplify union type")
             .with("useIntrinsicType", () => "Intrinsic type")
+            .with("distributiveUnion", () => "Distribute over union")
             .exhaustive()}
         </Title>
 
@@ -62,11 +63,6 @@ export const EvalDescription = ({
                       )}
                     </Code>
                   </Text>
-                  // <Code w="fit-content" key={k}>
-                  //   {`${k} -> ${printTypeNode(
-                  //     v._type === "typeDeclaration" ? v.type : v
-                  //   )}`}
-                  // </Code>
                 ))}
               </Stack>
             )
@@ -133,6 +129,36 @@ export const EvalDescription = ({
                     underline
                     target="_blank"
                     href={docsUrl}
+                  >
+                    here
+                  </Text>
+                  .
+                </Text>
+              </>
+            )
+          )
+          .with(
+            {
+              _type: "distributiveUnion",
+              typeName: P.select("typeName"),
+            },
+            ({ typeName }) => (
+              <>
+                <Text color="gray.6" size={13}>
+                  <Code>{typeName}</Code>'s argument is a union type and it can
+                  be distributed, i.e. <Code>{typeName}</Code> is applied to
+                  each union member.
+                </Text>
+                <Text color="gray.6" size={13}>
+                  Learn more about it{" "}
+                  <Text
+                    size={13}
+                    component="a"
+                    underline
+                    target="_blank"
+                    href={
+                      "https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types"
+                    }
                   >
                     here
                   </Text>

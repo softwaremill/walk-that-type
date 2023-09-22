@@ -18,6 +18,7 @@ import { v4 as uuid } from "uuid";
 import { evalT } from "./evalT/eval-type";
 import { extendsT } from "./extendsT/extendsT";
 import { intrinsicTypes } from "./evalT/intrinsic-types";
+import { checkForDistributedUnion, distributeUnion } from "./distributed-union";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 
@@ -90,6 +91,10 @@ export type EvalStep = {
         _type: "useIntrinsicType";
         text: string;
         docsUrl: string;
+      }
+    | {
+        _type: "distributiveUnion";
+        typeName: string;
       };
 };
 
@@ -317,45 +322,65 @@ const calculateNextStep = (
         throw new Error(`Unknown type ${tt.name}`);
       }
 
-      const newEnv = { ...env };
-      typeDeclaration.typeParameters.forEach((ty, idx) => {
-        addToEnvironment(newEnv, ty, tt.typeArguments[idx]);
-      });
+      return match(checkForDistributedUnion(typeDeclaration, tt.typeArguments))
+        .when(
+          (indices) => indices.length > 0,
+          (indices) => {
+            const updated = distributeUnion(tt.name, tt.typeArguments, indices);
 
-      const updated = mapType(typeDeclaration.type, (tt) => {
-        if (
-          tt._type === "typeReference" &&
-          typeDeclaration.typeParameters.includes(tt.name)
-        ) {
-          let replacingType = lookupType(newEnv, tt.name).expect(
-            "should have this type"
-          );
-          while (
-            replacingType.type._type === "typeReference" &&
-            replacingType.type.name !== typeDeclaration.name
-          ) {
-            replacingType = lookupType(newEnv, replacingType.type.name).expect(
-              "should have this type"
-            );
+            return some({
+              nodeToEval: targetNodeId,
+              result: replaceNode(type, targetNodeId, updated),
+              resultEnv: env,
+              evalDescription: {
+                _type: "distributiveUnion",
+                typeName: tt.name,
+              },
+            } as const);
           }
-          return { ...replacingType.type, nodeId: uuid() };
-        } else {
-          return tt;
-        }
-      });
+        )
+        .otherwise(() => {
+          const newEnv = { ...env };
+          typeDeclaration.typeParameters.forEach((ty, idx) => {
+            addToEnvironment(newEnv, ty, tt.typeArguments[idx]);
+          });
 
-      const fullyEvaled = evalT(newEnv, typeDeclaration.type).unwrap().type;
+          const updated = mapType(typeDeclaration.type, (tt) => {
+            if (
+              tt._type === "typeReference" &&
+              typeDeclaration.typeParameters.includes(tt.name)
+            ) {
+              let replacingType = lookupType(newEnv, tt.name).expect(
+                "should have this type"
+              );
+              while (
+                replacingType.type._type === "typeReference" &&
+                replacingType.type.name !== typeDeclaration.name
+              ) {
+                replacingType = lookupType(
+                  newEnv,
+                  replacingType.type.name
+                ).expect("should have this type");
+              }
+              return { ...replacingType.type, nodeId: uuid() };
+            } else {
+              return tt;
+            }
+          });
 
-      return some({
-        nodeToEval: targetNodeId,
-        result: replaceNode(type, targetNodeId, fullyEvaled),
-        resultEnv: newEnv,
-        evalDescription: {
-          _type: "substituteWithDefinition",
-          name: `${tt.text()}`,
-          evalTrace: getEvalTrace(updated, newEnv),
-        },
-      });
+          const fullyEvaled = evalT(newEnv, typeDeclaration.type).unwrap().type;
+
+          return some({
+            nodeToEval: targetNodeId,
+            result: replaceNode(type, targetNodeId, fullyEvaled),
+            resultEnv: newEnv,
+            evalDescription: {
+              _type: "substituteWithDefinition",
+              name: `${tt.text()}`,
+              evalTrace: getEvalTrace(updated, newEnv),
+            },
+          });
+        });
     })
 
     .with(P.shape({ _type: "union" }).select(), (tt) =>
