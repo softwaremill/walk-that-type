@@ -368,13 +368,28 @@ describe("mapped types", () => {
         T.mappedType(
           "k",
           T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
-          T.typeReference("k", []),
           T.typeReference("Exclude", [
             T.typeReference("k", []),
             T.union([T.stringLit("a"), T.stringLit("b")]),
-          ])
+          ]),
+          T.typeReference("k", [])
         )
       ).unwrap().type
     ).equalsTypeNode(T.object([["c", T.stringLit("c")]]));
+
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.mappedType(
+          "Property",
+          T.union([T.stringLit("kind"), T.stringLit("radius")]),
+          T.typeReference("Exclude", [
+            T.typeReference("Property", []),
+            T.stringLit("kind"),
+          ]),
+          T.typeReference("Property", [])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.object([["radius", T.stringLit("radius")]]));
   });
 });

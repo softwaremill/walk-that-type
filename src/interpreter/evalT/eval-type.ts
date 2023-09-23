@@ -203,7 +203,6 @@ export const evalT = (
                 }
               })
               .filter((x): x is [string, TypeNode] => x !== null)
-              .filter(([, type]) => type._type !== "never")
           ),
           env,
         });
