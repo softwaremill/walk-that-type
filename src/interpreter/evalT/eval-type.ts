@@ -62,10 +62,22 @@ export const evalT = (
     .with({ _type: "object" }, (t) =>
       sequence(
         t.properties.map(([k, v]) =>
-          evalT(env, v).map(({ type }) => [k, type] as const)
+          Do(() => {
+            const evaledKey = evalT(env, k).bind().type;
+            if (
+              evaledKey._type !== "stringLiteral" &&
+              evaledKey._type !== "numberLiteral"
+            ) {
+              return err(
+                new Error("object keys must be string or number literals")
+              );
+            }
+            const evaledValue = evalT(env, v).bind().type;
+            return ok([evaledKey, evaledValue] as const);
+          })
         )
       ).map((props) => ({
-        type: T.object(props as [string, TypeNode][]),
+        type: T.object(props as [TypeNode, TypeNode][]),
         env,
       }))
     )
@@ -196,13 +208,16 @@ export const evalT = (
                   ? evalT(newEnv, t.remapping).bind().type
                   : member;
 
-                if (key._type === "stringLiteral") {
-                  return [key.value, evalT(newEnv, t.type).bind().type];
+                if (
+                  key._type === "stringLiteral" ||
+                  key._type === "numberLiteral"
+                ) {
+                  return [key, evalT(newEnv, t.type).bind().type];
                 } else {
                   return null;
                 }
               })
-              .filter((x): x is [string, TypeNode] => x !== null)
+              .filter((x): x is [TypeNode, TypeNode] => x !== null)
           ),
           env,
         });

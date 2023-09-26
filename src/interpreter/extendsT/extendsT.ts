@@ -155,7 +155,7 @@ function matchObjectTypes(
   // and they all contain assignable types.
 
   for (const [key, value] of Object.values(shape.properties)) {
-    const correspondingType = t.properties.find(([k]) => k === key);
+    const correspondingType = t.properties.find(([k]) => deepEquals(k, key));
     // Object `t` is missing at least one property from `shape`, so it is not assignable
     if (!correspondingType) {
       return {

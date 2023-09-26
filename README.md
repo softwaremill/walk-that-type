@@ -29,8 +29,9 @@ Feel free to report any issues or feature requests using Github issues.
   - [ ] functions
 - [x] object types
 - [x] union types
-- [ ] mapped types
+- [x] mapped types
 - [x] distributed union
+- [ ] indexed access types
 - [ ] intersection types
 - [ ] function types
 - [ ] type variance

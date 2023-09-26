@@ -83,7 +83,7 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
     return ok(
       T.object(
         node.members.map((m) => [
-          m.name?.getText() as string,
+          T.stringLit(m.name?.getText() as string),
           mapASTToTypeNodes((m as any).type).expect(
             "Error while parsing object type"
           ),

@@ -2,6 +2,7 @@
 import { Option, none, some } from "this-is-ok/option";
 import { v4 as uuid } from "uuid";
 import { Environment } from "../environment";
+import { match } from "ts-pattern";
 
 export type NodeId = string;
 
@@ -16,7 +17,10 @@ type TypeNodeBase<T> = T &
     | { _type: "numberLiteral"; value: number }
     | { _type: "stringLiteral"; value: string }
     | { _type: "booleanLiteral"; value: boolean }
-    | { _type: "object"; properties: [key: string, value: TypeNodeBase<T>][] }
+    | {
+        _type: "object";
+        properties: [key: TypeNodeBase<T>, value: TypeNodeBase<T>][];
+      }
     | { _type: "tuple"; elements: TypeNodeBase<T>[] }
     | { _type: "array"; elementType: TypeNodeBase<T> }
     | { _type: "typeReference"; name: string; typeArguments: TypeNodeBase<T>[] }
@@ -224,7 +228,7 @@ const conditionalType = (
 });
 
 const objectType = (
-  properties: [key: string, value: TypeNode][]
+  properties: [key: TypeNode, value: TypeNode][]
 ): TypeNode => ({
   _type: "object",
   properties,
@@ -303,7 +307,10 @@ export const traverse = (type: TypeNode, f: (t: TypeNode) => void) => {
 
     case "object":
       f(type);
-      type.properties.forEach(([_k, v]) => traverse(v, f));
+      type.properties.forEach(([k, v]) => {
+        traverse(k, f);
+        traverse(v, f);
+      });
       break;
 
     case "array":
@@ -381,9 +388,10 @@ export const mapType = (
 
     case "object": {
       const properties = type.properties.map(([k, val]) => {
+        const newKey = mapType(k, f);
         const newVal = mapType(val, f);
-        return [k, newVal];
-      }) as [string, TypeNode][];
+        return [newKey, newVal];
+      }) as [TypeNode, TypeNode][];
       return {
         ...type,
         properties,
@@ -468,6 +476,20 @@ export const mapType = (
   }
 };
 
+export const replaceTypeReference = (
+  type: TypeNode,
+  typeVariableName: string,
+  newType: TypeNode
+) =>
+  mapType(type, (t) =>
+    match(t)
+      .when(
+        (t) => t._type === "typeReference" && t.name === typeVariableName,
+        () => newType
+      )
+      .otherwise(() => t)
+  );
+
 export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
   switch (type._type) {
     case "string":
@@ -516,7 +538,10 @@ export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
       const { nodeId, properties, ...rest } = type;
       return {
         ...rest,
-        properties: properties.map(([k, v]) => [k, withoutNodeIds(v)]),
+        properties: properties.map(([k, v]) => [
+          withoutNodeIds(k),
+          withoutNodeIds(v),
+        ]),
       };
     }
 
@@ -620,11 +645,9 @@ export const printTypeNode = (t: TypeNode): string => {
       return t.text();
 
     case "object":
-      return `{
-        ${t.properties.map(
-          ([key, value]) => `${key}1: ${printTypeNode(value)}`
-        )}
-      }`;
+      return `{${t.properties.map(
+        ([key, value]) => `\t[${printTypeNode(key)}]: ${printTypeNode(value)}`
+      )}}`;
 
     case "tuple":
       return `[${t.elements.map(printTypeNode).join(", ")}]`;
@@ -665,6 +688,10 @@ export const printTypeNode = (t: TypeNode): string => {
 
     case "typeDeclaration":
       return `type ${t.name} = ${printTypeNode(t.type)}`;
+
+    default:
+      console.warn("???", t);
+      return "";
   }
 };
 
