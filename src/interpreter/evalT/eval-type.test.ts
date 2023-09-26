@@ -115,14 +115,17 @@ describe("eval", () => {
       evalT(
         EMPTY_ENV,
         T.object([
-          ["a", T.numberLit(1)],
-          ["b", T.union([T.booleanLit(true), T.booleanLit(false)])],
+          [T.stringLit("a"), T.numberLit(1)],
+          [
+            T.stringLit("b"),
+            T.union([T.booleanLit(true), T.booleanLit(false)]),
+          ],
         ])
       ).unwrap().type
     ).equalsTypeNode(
       T.object([
-        ["a", T.numberLit(1)],
-        ["b", T.boolean()],
+        [T.stringLit("a"), T.numberLit(1)],
+        [T.stringLit("b"), T.boolean()],
       ])
     );
 
@@ -130,19 +133,22 @@ describe("eval", () => {
       evalT(
         EMPTY_ENV,
         T.object([
-          ["a", T.numberLit(1)],
+          [T.stringLit("a"), T.numberLit(1)],
           [
-            "b",
+            T.stringLit("b"),
             T.object([
-              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
+              [
+                T.stringLit("c"),
+                T.union([T.booleanLit(true), T.booleanLit(false)]),
+              ],
             ]),
           ],
         ])
       ).unwrap().type
     ).equalsTypeNode(
       T.object([
-        ["a", T.numberLit(1)],
-        ["b", T.object([["c", T.boolean()]])],
+        [T.stringLit("a"), T.numberLit(1)],
+        [T.stringLit("b"), T.object([[T.stringLit("c"), T.boolean()]])],
       ])
     );
   });
@@ -317,5 +323,81 @@ describe("global types", () => {
         ])
       ).unwrap().type
     ).equalsTypeNode(T.stringLit("a"));
+  });
+});
+
+describe("mapped types", () => {
+  test("basic mapped type", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.mappedType(
+          "k",
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          undefined,
+          T.typeReference("k", [])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.object([
+        [T.stringLit("a"), T.stringLit("a")],
+        [T.stringLit("b"), T.stringLit("b")],
+        [T.stringLit("c"), T.stringLit("c")],
+      ])
+    );
+  });
+
+  test("mapped type with remapping", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.mappedType(
+          "k",
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.typeReference("Uppercase", [T.typeReference("k", [])]),
+          T.string()
+        )
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.object([
+        [T.stringLit("A"), T.string()],
+        [T.stringLit("B"), T.string()],
+        [T.stringLit("C"), T.string()],
+      ])
+    );
+  });
+
+  test("mapped type: filtering with remapping", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.mappedType(
+          "k",
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.typeReference("Exclude", [
+            T.typeReference("k", []),
+            T.union([T.stringLit("a"), T.stringLit("b")]),
+          ]),
+          T.typeReference("k", [])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.object([[T.stringLit("c"), T.stringLit("c")]]));
+
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.mappedType(
+          "Property",
+          T.union([T.stringLit("kind"), T.stringLit("radius")]),
+          T.typeReference("Exclude", [
+            T.typeReference("Property", []),
+            T.stringLit("kind"),
+          ]),
+          T.typeReference("Property", [])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.object([[T.stringLit("radius"), T.stringLit("radius")]])
+    );
   });
 });

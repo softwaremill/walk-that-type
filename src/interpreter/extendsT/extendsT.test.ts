@@ -282,12 +282,12 @@ describe("extends object", () => {
       extendsT(
         EMPTY_ENV,
         T.object([
-          ["a", T.numberLit(1)],
-          ["b", T.stringLit("yo")],
+          [T.stringLit("a"), T.numberLit(1)],
+          [T.stringLit("b"), T.stringLit("yo")],
         ]),
         T.object([
-          ["a", T.numberLit(1)],
-          ["b", T.stringLit("yo")],
+          [T.stringLit("a"), T.numberLit(1)],
+          [T.stringLit("b"), T.stringLit("yo")],
         ])
       ).extends
     ).toBe(true);
@@ -296,12 +296,12 @@ describe("extends object", () => {
       extendsT(
         EMPTY_ENV,
         T.object([
-          ["a", T.numberLit(1)],
-          ["b", T.stringLit("yo")],
+          [T.stringLit("a"), T.numberLit(1)],
+          [T.stringLit("b"), T.stringLit("yo")],
         ]),
         T.object([
-          ["a", T.number()],
-          ["b", T.string()],
+          [T.stringLit("a"), T.number()],
+          [T.stringLit("b"), T.string()],
         ])
       ).extends
     ).toBe(true);
@@ -312,20 +312,20 @@ describe("extends object", () => {
       extendsT(
         EMPTY_ENV,
         T.object([
-          ["a", T.numberLit(1)],
-          ["b", T.stringLit("yo")],
+          [T.stringLit("a"), T.numberLit(1)],
+          [T.stringLit("b"), T.stringLit("yo")],
         ]),
-        T.object([["a", T.number()]])
+        T.object([[T.stringLit("a"), T.number()]])
       ).extends
     ).toBe(true);
 
     expect(
       extendsT(
         EMPTY_ENV,
-        T.object([["a", T.number()]]),
+        T.object([[T.stringLit("a"), T.number()]]),
         T.object([
-          ["a", T.numberLit(1)],
-          ["b", T.stringLit("yo")],
+          [T.stringLit("a"), T.numberLit(1)],
+          [T.stringLit("b"), T.stringLit("yo")],
         ])
       ).extends
     ).toBe(false);
@@ -336,22 +336,28 @@ describe("extends object", () => {
       extendsT(
         EMPTY_ENV,
         T.object([
-          ["a", T.numberLit(1)],
+          [T.stringLit("a"), T.numberLit(1)],
           [
-            "b",
+            T.stringLit("b"),
             T.object([
-              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
-              ["d", T.stringLit("yo")],
+              [
+                T.stringLit("c"),
+                T.union([T.booleanLit(true), T.booleanLit(false)]),
+              ],
+              [T.stringLit("d"), T.stringLit("yo")],
             ]),
           ],
         ]),
         T.object([
-          ["a", T.number()],
+          [T.stringLit("a"), T.number()],
           [
-            "b",
+            T.stringLit("b"),
             T.object([
-              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
-              ["d", T.string()],
+              [
+                T.stringLit("c"),
+                T.union([T.booleanLit(true), T.booleanLit(false)]),
+              ],
+              [T.stringLit("d"), T.string()],
             ]),
           ],
         ])
@@ -362,21 +368,27 @@ describe("extends object", () => {
       extendsT(
         EMPTY_ENV,
         T.object([
-          ["a", T.numberLit(1)],
+          [T.stringLit("a"), T.numberLit(1)],
           [
-            "b",
+            T.stringLit("b"),
             T.object([
-              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
+              [
+                T.stringLit("c"),
+                T.union([T.booleanLit(true), T.booleanLit(false)]),
+              ],
             ]),
           ],
         ]),
         T.object([
-          ["a", T.number()],
+          [T.stringLit("a"), T.number()],
           [
-            "b",
+            T.stringLit("b"),
             T.object([
-              ["c", T.union([T.booleanLit(true), T.booleanLit(false)])],
-              ["d", T.string()],
+              [
+                T.stringLit("c"),
+                T.union([T.booleanLit(true), T.booleanLit(false)]),
+              ],
+              [T.stringLit("d"), T.string()],
             ]),
           ],
         ])
@@ -388,12 +400,12 @@ describe("extends object", () => {
     const result = extendsT(
       EMPTY_ENV,
       T.object([
-        ["a", T.numberLit(1)],
-        ["b", T.stringLit("yo")],
+        [T.stringLit("a"), T.numberLit(1)],
+        [T.stringLit("b"), T.stringLit("yo")],
       ]),
       T.object([
-        ["a", T.infer("X")],
-        ["b", T.infer("Y")],
+        [T.stringLit("a"), T.infer("X")],
+        [T.stringLit("b"), T.infer("Y")],
       ])
     ).inferredTypes;
 

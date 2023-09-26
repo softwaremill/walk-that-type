@@ -1,6 +1,6 @@
 import ts from "typescript";
 import { T, TypeNode } from ".";
-import { Result, err, ok } from "this-is-ok/result";
+import { Do, Result, err, of, ok } from "this-is-ok/result";
 
 export const sequence = <T, E>(opts: Result<T, E>[]): Result<T[], E> => {
   const error = opts.find((el) => el.isErr);
@@ -83,13 +83,37 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
     return ok(
       T.object(
         node.members.map((m) => [
-          m.name?.getText() as string,
+          T.stringLit(m.name?.getText() as string),
           mapASTToTypeNodes((m as any).type).expect(
             "Error while parsing object type"
           ),
         ])
       )
     );
+  } else if (ts.isMappedTypeNode(node)) {
+    return Do(() => {
+      const name = node.typeParameter.name.getText();
+      const constraint = of(
+        node.typeParameter.constraint,
+        new Error("mappedType constraint")
+      ).flatMap((v) => mapASTToTypeNodes(v));
+      const type = of(node.type, new Error("mappedType type")).flatMap((v) =>
+        mapASTToTypeNodes(v)
+      );
+      const remapping = node.nameType
+        ? mapASTToTypeNodes(node.nameType)
+        : undefined;
+      return ok(
+        T.mappedType(
+          name,
+          constraint.expect("Error while parsing constraint"),
+          remapping
+            ? remapping.expect("Error while parsing `remapping`")
+            : undefined,
+          type.expect("Error while parsing type")
+        )
+      );
+    });
   } else {
     console.error(node, `Unsupported type ${ts.SyntaxKind[node.kind]}`);
     return err(new Error(`Unsupported type ${ts.SyntaxKind[node.kind]}`));

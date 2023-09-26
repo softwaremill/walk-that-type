@@ -22,6 +22,13 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
+    name: "Mapped types",
+    envSource: "",
+    typeSource: `{
+      [k in "a" | "b" as Uppercase<k>]: k
+    };`,
+  },
+  {
     name: "Distributed union types",
     envSource: `type ToArray<T1, T2> = T1 extends any ? 
     T2 extends any 
@@ -36,7 +43,7 @@ const EXAMPLES = [
     typeSource: `Uppercase<"hello"> | Lowercase<"HowDY"> | Capitalize<"hey"> | Uncapitalize<"Hey">`,
   },
   {
-    name: "Object type2",
+    name: "Object type",
     envSource: "",
     typeSource: `{
       a: 42,
@@ -198,7 +205,6 @@ const App = () => {
 
 function renderTrace(trace: EvalTrace) {
   const [initialType, ...steps] = trace;
-
   return (
     <Stack mah="100%">
       <CodeBlock code={printTypeNode(initialType)} />

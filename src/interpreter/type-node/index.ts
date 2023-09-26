@@ -2,6 +2,7 @@
 import { Option, none, some } from "this-is-ok/option";
 import { v4 as uuid } from "uuid";
 import { Environment } from "../environment";
+import { match } from "ts-pattern";
 
 export type NodeId = string;
 
@@ -16,7 +17,10 @@ type TypeNodeBase<T> = T &
     | { _type: "numberLiteral"; value: number }
     | { _type: "stringLiteral"; value: string }
     | { _type: "booleanLiteral"; value: boolean }
-    | { _type: "object"; properties: [key: string, value: TypeNodeBase<T>][] }
+    | {
+        _type: "object";
+        properties: [key: TypeNodeBase<T>, value: TypeNodeBase<T>][];
+      }
     | { _type: "tuple"; elements: TypeNodeBase<T>[] }
     | { _type: "array"; elementType: TypeNodeBase<T> }
     | { _type: "typeReference"; name: string; typeArguments: TypeNodeBase<T>[] }
@@ -47,6 +51,13 @@ type TypeNodeBase<T> = T &
       }
     | {
         _type: "rest";
+        type: TypeNodeBase<T>;
+      }
+    | {
+        _type: "mappedType";
+        keyName: string;
+        constraint: TypeNodeBase<T>;
+        remapping?: TypeNodeBase<T>;
         type: TypeNodeBase<T>;
       }
   );
@@ -217,7 +228,7 @@ const conditionalType = (
 });
 
 const objectType = (
-  properties: [key: string, value: TypeNode][]
+  properties: [key: TypeNode, value: TypeNode][]
 ): TypeNode => ({
   _type: "object",
   properties,
@@ -225,6 +236,25 @@ const objectType = (
   text: () => `{
     ${properties.map(([key, value]) => `${key}: ${value.text()}`)}
     }`,
+});
+
+const mappedType = (
+  keyName: string,
+  constraint: TypeNode,
+  remapping: TypeNode | undefined,
+  type: TypeNode
+): TypeNode => ({
+  _type: "mappedType",
+  keyName,
+  constraint,
+  remapping,
+  type,
+  text: () => `{
+    [${keyName} in ${constraint.text()}${
+      remapping ? "as " + remapping.text() : ""
+    }]: ${type.text()}
+  }`,
+  nodeId: uuid(),
 });
 
 export const T = {
@@ -250,6 +280,7 @@ export const T = {
   rest,
   array,
   object: objectType,
+  mappedType,
 };
 
 export const traverse = (type: TypeNode, f: (t: TypeNode) => void) => {
@@ -276,7 +307,10 @@ export const traverse = (type: TypeNode, f: (t: TypeNode) => void) => {
 
     case "object":
       f(type);
-      type.properties.forEach(([_k, v]) => traverse(v, f));
+      type.properties.forEach(([k, v]) => {
+        traverse(k, f);
+        traverse(v, f);
+      });
       break;
 
     case "array":
@@ -354,9 +388,10 @@ export const mapType = (
 
     case "object": {
       const properties = type.properties.map(([k, val]) => {
+        const newKey = mapType(k, f);
         const newVal = mapType(val, f);
-        return [k, newVal];
-      }) as [string, TypeNode][];
+        return [newKey, newVal];
+      }) as [TypeNode, TypeNode][];
       return {
         ...type,
         properties,
@@ -416,6 +451,19 @@ export const mapType = (
       };
     }
 
+    case "mappedType": {
+      const constraint = mapType(type.constraint, f);
+      const remapping = type.remapping ? mapType(type.remapping, f) : undefined;
+      const type_ = mapType(type.type, f);
+
+      return {
+        ...type,
+        constraint,
+        remapping,
+        type: type_,
+      };
+    }
+
     case "rest":
       return {
         ...type,
@@ -427,6 +475,20 @@ export const mapType = (
       return type;
   }
 };
+
+export const replaceTypeReference = (
+  type: TypeNode,
+  typeVariableName: string,
+  newType: TypeNode
+) =>
+  mapType(type, (t) =>
+    match(t)
+      .when(
+        (t) => t._type === "typeReference" && t.name === typeVariableName,
+        () => newType
+      )
+      .otherwise(() => t)
+  );
 
 export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
   switch (type._type) {
@@ -476,7 +538,10 @@ export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
       const { nodeId, properties, ...rest } = type;
       return {
         ...rest,
-        properties: properties.map(([k, v]) => [k, withoutNodeIds(v)]),
+        properties: properties.map(([k, v]) => [
+          withoutNodeIds(k),
+          withoutNodeIds(v),
+        ]),
       };
     }
 
@@ -503,6 +568,15 @@ export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
         extendsType: withoutNodeIds(extendsType),
         thenType: withoutNodeIds(thenType),
         elseType: withoutNodeIds(elseType),
+      };
+    }
+    case "mappedType": {
+      const { nodeId, constraint, remapping, type: t, ...rest } = type;
+      return {
+        ...rest,
+        constraint: withoutNodeIds(constraint),
+        remapping: remapping ? withoutNodeIds(remapping) : undefined,
+        type: withoutNodeIds(t),
       };
     }
   }
@@ -571,11 +645,9 @@ export const printTypeNode = (t: TypeNode): string => {
       return t.text();
 
     case "object":
-      return `{
-        ${t.properties.map(
-          ([key, value]) => `${key}1: ${printTypeNode(value)}`
-        )}
-      }`;
+      return `{${t.properties.map(
+        ([key, value]) => `\t[${printTypeNode(key)}]: ${printTypeNode(value)}`
+      )}}`;
 
     case "tuple":
       return `[${t.elements.map(printTypeNode).join(", ")}]`;
@@ -601,6 +673,13 @@ export const printTypeNode = (t: TypeNode): string => {
         t.extendsType
       )} ? ${printTypeNode(t.thenType)} : ${printTypeNode(t.elseType)}`;
 
+    case "mappedType":
+      return `{
+        [${t.keyName} in ${printTypeNode(t.constraint)}${
+          t.remapping ? "as " + printTypeNode(t.remapping) : ""
+        }]: ${printTypeNode(t.type)}
+      }`;
+
     case "rest":
       return `...${printTypeNode(t.type)}`;
 
@@ -609,6 +688,10 @@ export const printTypeNode = (t: TypeNode): string => {
 
     case "typeDeclaration":
       return `type ${t.name} = ${printTypeNode(t.type)}`;
+
+    default:
+      console.warn("???", t);
+      return "";
   }
 };
 

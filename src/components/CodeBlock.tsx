@@ -114,6 +114,7 @@ export const CodeBlock = ({ code }: { code: string }) => {
       })
       .catch((e) => {
         console.error(e);
+        setFormattedCode(code);
       });
   }, [code]);
 

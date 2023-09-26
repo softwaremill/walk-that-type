@@ -32,6 +32,7 @@ export const EvalDescription = ({
             .with("simplifyUnion", () => "Simplify union type")
             .with("useIntrinsicType", () => "Intrinsic type")
             .with("distributiveUnion", () => "Distribute over union")
+            .with("mappedType", () => "Mapped type")
             .exhaustive()}
         </Title>
 
@@ -186,6 +187,16 @@ export const EvalDescription = ({
             (unionEl) => (
               <Text color="gray.6" size={13}>
                 Simplifying the union <Code>{printTypeNode(unionEl)}</Code>.
+              </Text>
+            )
+          )
+          .with(
+            {
+              _type: "mappedType",
+            },
+            () => (
+              <Text color="gray.6" size={13}>
+                Simplifying the mapped type.
               </Text>
             )
           )

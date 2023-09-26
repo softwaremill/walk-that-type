@@ -1,11 +1,13 @@
 import { Do, Option, none, some } from "this-is-ok/option";
 import {
   NodeId,
+  T,
   TypeNode,
   deepEquals,
   findTypeNodeById,
   mapType,
   replaceNode,
+  replaceTypeReference,
 } from "./type-node";
 import {
   Environment,
@@ -95,6 +97,9 @@ export type EvalStep = {
     | {
         _type: "distributiveUnion";
         typeName: string;
+      }
+    | {
+        _type: "mappedType";
       };
 };
 
@@ -108,15 +113,21 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
     )
     .with({ _type: "array" }, (t) => chooseNodeToEval(env, t.elementType))
     .with({ _type: "object" }, (t) => {
-      for (const [, v] of t.properties) {
-        const res = chooseNodeToEval(env, v);
+      for (const [k, v] of t.properties) {
+        const res = chooseNodeToEval(env, k);
         if (res.isSome) {
           return res;
+        }
+
+        const res2 = chooseNodeToEval(env, v);
+        if (res2.isSome) {
+          return res2;
         }
       }
 
       return none;
     })
+
     .with({ _type: "tuple" }, (t) => {
       for (const el of t.elements) {
         if (el._type === "rest") {
@@ -179,6 +190,14 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
           }
         });
     })
+
+    .with({ _type: "mappedType" }, (t) => {
+      const res = chooseNodeToEval(env, t.constraint);
+      if (res.isSome) {
+        return res;
+      }
+      return some(t.nodeId);
+    })
     .otherwise(() => {
       console.warn("???", node);
       return none;
@@ -229,6 +248,59 @@ const calculateNextStep = (
           restElement: restEl,
         },
       } as EvalStep);
+    })
+    .with({ _type: "mappedType" }, (t) => {
+      // ***we want to go from this:***
+      // {
+      //    [k in "a" | "b" as Uppercase<K>]: k
+      // }
+      //  ***to this:***
+      // {
+      //    [Uppercase<"a">]: "a",
+      //    [Uppercase<"b"]: "b"
+      // }
+      // the form above is not a valid type in TS (keys can only be type literals),
+      // but it could be a good visualization of what effectively going on under the hood
+
+      // at this point the `t.constraint` should be evaled to the simplest union or a single type
+      // this is the "a" | "b" from the example above
+      const constraints =
+        t.constraint._type === "union" ? t.constraint.members : [t.constraint];
+
+      // this will be the `Uppercase<"a">, Uppercase<"b">` from the example above
+      const lhss = constraints.map((c) => {
+        const remapping = t.remapping;
+        if (remapping) {
+          return {
+            ...replaceTypeReference(remapping, t.keyName, c),
+            nodeId: uuid(),
+          };
+        } else {
+          return c;
+        }
+      });
+
+      // this will be the `"a", "b"` from the example above
+      const rhss = constraints.map((c) => ({
+        ...replaceTypeReference(t.type, t.keyName, c),
+        nodeId: uuid(),
+      }));
+
+      // zip lhss and rhss together
+      const newProperties = lhss.map(
+        (lhs, idx) => [lhs, rhss[idx]] as [TypeNode, TypeNode]
+      );
+
+      const updated = T.object(newProperties);
+
+      return some({
+        nodeToEval: targetNodeId,
+        result: replaceNode(type, targetNodeId, updated),
+        resultEnv: env,
+        evalDescription: {
+          _type: "mappedType",
+        },
+      });
     })
     .with(P.shape({ _type: "conditionalType" }).select(), (tt) => {
       return Do(() => {
