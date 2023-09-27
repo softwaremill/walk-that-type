@@ -33,6 +33,7 @@ export const EvalDescription = ({
             .with("useIntrinsicType", () => "Intrinsic type")
             .with("distributiveUnion", () => "Distribute over union")
             .with("mappedType", () => "Mapped type")
+            .with("indexedAccessType", () => "Indexed Access Types")
             .exhaustive()}
         </Title>
 
@@ -197,6 +198,16 @@ export const EvalDescription = ({
             () => (
               <Text color="gray.6" size={13}>
                 Simplifying the mapped type.
+              </Text>
+            )
+          )
+          .with(
+            {
+              _type: "indexedAccessType",
+            },
+            () => (
+              <Text color="gray.6" size={13}>
+                Accessing type property.
               </Text>
             )
           )

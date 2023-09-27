@@ -401,3 +401,95 @@ describe("mapped types", () => {
     );
   });
 });
+
+describe("indexed access type", () => {
+  test("object single property", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(
+          T.object([
+            [T.stringLit("a"), T.string()],
+            [T.stringLit("b"), T.number()],
+          ]),
+          T.stringLit("a")
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.string());
+
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(
+          T.object([
+            [T.stringLit("a"), T.string()],
+            [T.stringLit("b"), T.number()],
+          ]),
+          T.stringLit("b")
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.number());
+  });
+
+  test("object multiple properties", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(
+          T.object([
+            [T.stringLit("a"), T.string()],
+            [T.stringLit("b"), T.number()],
+          ]),
+          T.union([T.stringLit("a"), T.stringLit("b")])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.union([T.string(), T.number()]));
+  });
+
+  test("array single prop", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(T.tuple([T.string(), T.number()]), T.numberLit(0))
+      ).unwrap().type
+    ).equalsTypeNode(T.string());
+
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(T.tuple([T.string(), T.number()]), T.numberLit(1))
+      ).unwrap().type
+    ).equalsTypeNode(T.number());
+  });
+
+  test("array multiple properties", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(
+          T.tuple([T.string(), T.number()]),
+          T.union([T.numberLit(0), T.numberLit(1)])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.union([T.string(), T.number()]));
+  });
+
+  test("array length prop", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(
+          T.tuple([T.string(), T.number()]),
+          T.stringLit("length")
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.numberLit(2));
+
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(T.tuple([]), T.stringLit("length"))
+      ).unwrap().type
+    ).equalsTypeNode(T.numberLit(0));
+  });
+});

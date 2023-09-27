@@ -114,6 +114,13 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
         )
       );
     });
+  } else if (ts.isIndexedAccessTypeNode(node)) {
+    return ok(
+      T.indexedAccessType(
+        mapASTToTypeNodes(node.objectType).expect("couldn't parse object type"),
+        mapASTToTypeNodes(node.indexType).expect("couldn't parse index type")
+      )
+    );
   } else {
     console.error(node, `Unsupported type ${ts.SyntaxKind[node.kind]}`);
     return err(new Error(`Unsupported type ${ts.SyntaxKind[node.kind]}`));
