@@ -22,6 +22,20 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
+    name: "Indexed access types",
+    envSource: "",
+    typeSource: `{
+    a: 1,
+    b: 2,
+    c: 3
+  }["b"]`,
+  },
+  {
+    name: "Indexed access types2",
+    envSource: "",
+    typeSource: `[1, 2, 3][2]`,
+  },
+  {
     name: "Mapped types",
     envSource: "",
     typeSource: `{

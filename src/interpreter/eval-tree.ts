@@ -17,7 +17,7 @@ import {
 } from "./environment";
 import { P, match } from "ts-pattern";
 import { v4 as uuid } from "uuid";
-import { evalT } from "./evalT/eval-type";
+import { accessType, evalT } from "./evalT/eval-type";
 import { extendsT } from "./extendsT/extendsT";
 import { intrinsicTypes } from "./evalT/intrinsic-types";
 import { checkForDistributedUnion, distributeUnion } from "./distributed-union";
@@ -100,6 +100,9 @@ export type EvalStep = {
       }
     | {
         _type: "mappedType";
+      }
+    | {
+        _type: "indexedAccessType";
       };
 };
 
@@ -196,6 +199,20 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
       if (res.isSome) {
         return res;
       }
+      return some(t.nodeId);
+    })
+
+    .with({ _type: "indexedAccessType" }, (t) => {
+      const res = chooseNodeToEval(env, t.objectType);
+      if (res.isSome) {
+        return res;
+      }
+
+      const res2 = chooseNodeToEval(env, t.indexType);
+      if (res2.isSome) {
+        return res2;
+      }
+
       return some(t.nodeId);
     })
     .otherwise(() => {
@@ -455,7 +472,7 @@ const calculateNextStep = (
         });
     })
 
-    .with(P.shape({ _type: "union" }).select(), (tt) =>
+    .with({ _type: "union" }, (tt) =>
       evalT(env, tt)
         .ok()
         .map((t) => ({
@@ -469,8 +486,26 @@ const calculateNextStep = (
         }))
     )
 
+    .with({ _type: "indexedAccessType" }, (tt) => {
+      return Do(() => {
+        const accessedType = accessType(tt.objectType, tt.indexType)
+          .ok()
+          .bind();
+
+        return some({
+          nodeToEval: targetNodeId,
+          result: replaceNode(type, targetNodeId, accessedType),
+          resultEnv: env,
+          evalDescription: {
+            _type: "indexedAccessType",
+          },
+        });
+      });
+    })
+
     .otherwise(() => {
-      throw new Error(`unimplemented: ${nodeToEval._type}`);
+      console.error(`unimplemented: ${nodeToEval._type}`);
+      return none;
     });
 };
 

@@ -224,10 +224,82 @@ export const evalT = (
       });
     })
 
+    .with({ _type: "indexedAccessType" }, (t) =>
+      Do(() => {
+        const lhs = evalT(env, t.objectType).bind().type;
+        const rhs = evalT(env, t.indexType).bind().type;
+
+        const accessedType = accessType(lhs, rhs).bind();
+        return evalT(env, accessedType);
+      })
+    )
+
     .otherwise(() => {
       console.error("unhandled type", type);
       return err(new Error("unhandled type in evalT"));
     });
+
+export function accessType(
+  objType: TypeNode,
+  indexType: TypeNode
+): Result<TypeNode, Error> {
+  return match([objType, indexType])
+    .with([{ _type: "object" }, { _type: "stringLiteral" }], ([o, idx]) => {
+      const val = o.properties.find(
+        ([k]) => k._type === "stringLiteral" && k.value === idx.value
+      );
+      if (!val) {
+        return ok(T.any());
+      }
+
+      return ok(val[1]);
+    })
+    .with([{ _type: "object" }, { _type: "union" }], ([o, union]) => {
+      const vals = union.members.map((el) =>
+        el._type !== "stringLiteral"
+          ? T.any()
+          : o.properties.find(
+              ([k]) => k._type === "stringLiteral" && k.value === el.value
+            )?.[1] ?? T.any()
+      );
+
+      return ok(T.union(vals));
+    })
+    .with([{ _type: "tuple" }, { _type: "numberLiteral" }], ([tuple, idx]) => {
+      const val = tuple.elements.at(idx.value);
+      if (!val) {
+        return ok(T.undefined());
+      }
+
+      return ok(val);
+    })
+    .with([{ _type: "tuple" }, { _type: "union" }], ([tuple, idxs]) => {
+      const vals = idxs.members
+        .filter(
+          (idx): idx is Extract<TypeNode, { _type: "numberLiteral" }> =>
+            idx._type === "numberLiteral"
+        )
+        .map((idx) => tuple.elements.at(idx.value) ?? T.undefined());
+      if (vals.length === 0) {
+        return ok(T.undefined());
+      }
+
+      return ok(T.union(vals));
+    })
+    .with(
+      [{ _type: "tuple" }, { _type: "stringLiteral", value: "length" }],
+      ([tuple]) => {
+        return ok(T.numberLit(tuple.elements.length));
+      }
+    )
+    .otherwise(() =>
+      err(
+        new Error(
+          `can't perform indexed access type with: ${objType} and ${indexType}`
+        )
+      )
+    );
+}
 
 function evalRestType(env: Environment, t: TypeNode): TypeNode {
   if (t._type === "rest") {

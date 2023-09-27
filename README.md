@@ -31,7 +31,8 @@ Feel free to report any issues or feature requests using Github issues.
 - [x] union types
 - [x] mapped types
 - [x] distributed union
-- [ ] indexed access types
+- [x] indexed access types
+- [ ] keyof
 - [ ] intersection types
 - [ ] function types
 - [ ] type variance
@@ -76,3 +77,12 @@ Feel free to report any issues or feature requests using Github issues.
 ## Implementing built-in types
 
 To add a missing built-in type (e.g. `Pick`) you just need to implement it in the `global-types.ts` files according to `GlobalTypeFn` type.
+
+## Other todos:
+
+- [ ] landing page / how to use section
+- [ ] report a bug button (link to gh issue template)
+- [ ] star on github widget
+- [ ] UI revamp
+- [ ] step through controls instead of showing all at once
+- [ ] toasts informing of errors instead of console logging

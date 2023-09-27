@@ -2,7 +2,7 @@
 import { Option, none, some } from "this-is-ok/option";
 import { v4 as uuid } from "uuid";
 import { Environment } from "../environment";
-import { match } from "ts-pattern";
+import { P, match } from "ts-pattern";
 
 export type NodeId = string;
 
@@ -59,6 +59,11 @@ type TypeNodeBase<T> = T &
         constraint: TypeNodeBase<T>;
         remapping?: TypeNodeBase<T>;
         type: TypeNodeBase<T>;
+      }
+    | {
+        _type: "indexedAccessType";
+        indexType: TypeNodeBase<T>;
+        objectType: TypeNodeBase<T>;
       }
   );
 
@@ -257,6 +262,17 @@ const mappedType = (
   nodeId: uuid(),
 });
 
+const indexedAccessType = (
+  objectType: TypeNode,
+  indexType: TypeNode
+): TypeNode => ({
+  _type: "indexedAccessType",
+  nodeId: uuid(),
+  indexType,
+  objectType,
+  text: () => `${objectType.text()}[${indexType.text()}]`,
+});
+
 export const T = {
   typeDeclaration,
   numberLit,
@@ -281,79 +297,93 @@ export const T = {
   array,
   object: objectType,
   mappedType,
+  indexedAccessType,
 };
 
-export const traverse = (type: TypeNode, f: (t: TypeNode) => void) => {
-  switch (type._type) {
-    case "string":
-    case "number":
-    case "boolean":
-    case "undefined":
-    case "numberLiteral":
-    case "stringLiteral":
-    case "booleanLiteral":
-    case "null":
-    case "void":
-    case "any":
-    case "unknown":
-    case "never":
-      f(type);
-      break;
-
-    case "tuple":
-      f(type);
+export const traverse = (type: TypeNode, f: (t: TypeNode) => void) =>
+  match(type)
+    .with(
+      {
+        _type: P.union(
+          "string",
+          "number",
+          "boolean",
+          "undefined",
+          "numberLiteral",
+          "stringLiteral",
+          "booleanLiteral",
+          "null",
+          "void",
+          "any",
+          "unknown",
+          "never"
+        ),
+      },
+      (t) => {
+        f(t);
+      }
+    )
+    .with({ _type: "tuple" }, (type) => {
       type.elements.forEach((e) => traverse(e, f));
-      break;
-
-    case "object":
       f(type);
+    })
+    .with({ _type: "object" }, (type) => {
       type.properties.forEach(([k, v]) => {
         traverse(k, f);
         traverse(v, f);
       });
-      break;
-
-    case "array":
       f(type);
+    })
+    .with({ _type: "array" }, (type) => {
       f(type.elementType);
-      break;
-
-    case "typeReference":
       f(type);
+    })
+    .with({ _type: "typeReference" }, (type) => {
       type.typeArguments.forEach((a) => traverse(a, f));
-      break;
-
-    case "union":
       f(type);
+    })
+    .with({ _type: "union" }, (type) => {
       type.members.forEach((m) => traverse(m, f));
-      break;
-
-    case "intersection":
       f(type);
+    })
+    .with({ _type: "intersection" }, (type) => {
       type.members.forEach((m) => traverse(m, f));
-      break;
-
-    case "conditionalType":
       f(type);
+    })
+    .with({ _type: "conditionalType" }, (type) => {
       traverse(type.checkType, f);
       traverse(type.extendsType, f);
       traverse(type.thenType, f);
       traverse(type.elseType, f);
-      break;
-
-    case "rest":
       f(type);
+    })
+    .with({ _type: "rest" }, (type) => {
       traverse(type.type, f);
-      break;
+      f(type);
+    })
+    .with({ _type: "infer" }, () => {
+      // do nothing
+    })
+    .with({ _type: "typeDeclaration" }, () => {
+      // do nothing
+    })
+    .with({ _type: "mappedType" }, (type) => {
+      traverse(type.constraint, f);
+      const remapping = type.remapping;
+      if (remapping) {
+        traverse(remapping, f);
+      }
+      traverse(type.type, f);
+      f(type);
+    })
+    .with({ _type: "indexedAccessType" }, (type) => {
+      traverse(type.objectType, f);
+      traverse(type.indexType, f);
+      f(type);
+    })
+    .exhaustive();
 
-    case "infer":
-      break;
-
-    case "typeDeclaration":
-      break;
-  }
-};
-
+// TODO: would be good to express this with `traverse`
 export const mapType = (
   type: TypeNode,
   f: (t: TypeNode) => TypeNode
@@ -461,6 +491,17 @@ export const mapType = (
         constraint,
         remapping,
         type: type_,
+      };
+    }
+
+    case "indexedAccessType": {
+      const indexType = mapType(type.indexType, f);
+      const objectType = mapType(type.objectType, f);
+
+      return {
+        ...type,
+        indexType,
+        objectType,
       };
     }
 
@@ -579,6 +620,14 @@ export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
         type: withoutNodeIds(t),
       };
     }
+    case "indexedAccessType": {
+      const { indexType, objectType, nodeId, ...rest } = type;
+      return {
+        ...rest,
+        indexType: withoutNodeIds(indexType),
+        objectType: withoutNodeIds(objectType),
+      };
+    }
   }
 };
 
@@ -688,6 +737,9 @@ export const printTypeNode = (t: TypeNode): string => {
 
     case "typeDeclaration":
       return `type ${t.name} = ${printTypeNode(t.type)}`;
+
+    case "indexedAccessType":
+      return `${printTypeNode(t.objectType)}[${printTypeNode(t.indexType)}]`;
 
     default:
       console.warn("???", t);
