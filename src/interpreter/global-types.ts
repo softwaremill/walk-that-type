@@ -22,4 +22,20 @@ export const globalTypes: Environment = {
       T.never()
     )
   ) as TypeDeclaration,
+  // Pick: T.typeDeclaration(
+  //   "Pick",
+  //   ["T", "K"],
+  //   T.mappedType("P", T.typeReference("K", []), )
+  //   )
+  // ) as TypeDeclaration,
+  // Omit: T.typeDeclaration(
+  //   "Omit",
+  //   ["T", "K"],
+  //   T.conditionalType(
+  //     T.typeReference("T", []),
+  //     T.typeReference("U", []),
+  //     T.typeReference("T", []),
+  //     T.never()
+  //   )
+  // ) as TypeDeclaration,
 };
