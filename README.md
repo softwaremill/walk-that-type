@@ -44,8 +44,10 @@ Feel free to report any issues or feature requests using Github issues.
   - [x] Lowercase
   - [x] Capitalize
   - [x] Uncapitalize
-  - [x] Extract, Exclude
-  - [ ] Pick, Omit (needs mapped types)
+  - [x] Extract,
+  - [x] Exclude
+  - [x] Pick,
+  - [ ] Omit (needs keyof)
   - [ ] Partial, Required (needs optional properties)
   - [ ] Readonly (needs readonly)
   - [ ] NonNullable (needs intersection and `{}` type)
@@ -61,7 +63,7 @@ Feel free to report any issues or feature requests using Github issues.
   - [ ] intersection types
   - [ ] function types
 - [x] conditional types
-- [ ] Test it with easy type challenges
+- [ ] Make sure easy type challenges can be used with this app
 
 # Implementing new features:
 
@@ -69,7 +71,7 @@ Feel free to report any issues or feature requests using Github issues.
   requires adding a new `TypeNode` variant. Fill missing cases in functions that use `TypeNode` (use
   `pnpm check:types` to find all these places).
 - Add tests and implement `evalT` for this feature.
-- Add tests and implement `extendsT` for this feature.
+- Add tests and implement `extendsT` for this feature (if needed).
 - Add traverse logic in `traverse` function.
 - In `eval-tree.ts` add new cases in `calculateNextStep` and `chooseNodeToEval`.
 - Finally, update `EvalDescription` component.
@@ -81,6 +83,7 @@ To add a missing built-in type (e.g. `Pick`) you just need to implement it in th
 ## Other todos:
 
 - [ ] landing page / how to use section
+- [ ] Better examples
 - [ ] report a bug button (link to gh issue template)
 - [ ] star on github widget
 - [ ] UI revamp
