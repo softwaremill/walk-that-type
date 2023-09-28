@@ -22,4 +22,25 @@ export const globalTypes: Environment = {
       T.never()
     )
   ) as TypeDeclaration,
+  Pick: T.typeDeclaration(
+    "Pick",
+    ["T", "K"],
+    T.mappedType(
+      "P",
+      T.typeReference("K", []),
+      undefined,
+      T.indexedAccessType(T.typeReference("T", []), T.typeReference("P", []))
+    )
+  ) as TypeDeclaration,
+  // TODO: needs keyof
+  // Omit: T.typeDeclaration(
+  //   "Omit",
+  //   ["T", "K"],
+  //   T.mappedType(
+  //     "P",
+  //     ,
+  //     undefined,
+  //     T.indexedAccessType(T.typeReference("T", []), T.typeReference("P", []))
+  //   )
+  // ) as TypeDeclaration,
 };

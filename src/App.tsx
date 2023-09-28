@@ -22,6 +22,17 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
+    name: "Pick",
+    envSource: `
+    type Todo {
+      title: string;
+      description: string;
+      completed: boolean;
+    }
+     `,
+    typeSource: `Pick<Todo, "title" | "completed">`,
+  },
+  {
     name: "Indexed access types",
     envSource: "",
     typeSource: `{

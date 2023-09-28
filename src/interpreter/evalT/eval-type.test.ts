@@ -324,6 +324,48 @@ describe("global types", () => {
       ).unwrap().type
     ).equalsTypeNode(T.stringLit("a"));
   });
+
+  test("Pick", () => {
+    expect(
+      evalT(
+        createEnvironment(`
+        type Todo = {
+          title: string;
+          description: string;
+          completed: boolean;
+        } 
+        `).unwrap(),
+        T.typeReference("Pick", [
+          T.typeReference("Todo", []),
+          T.union([T.stringLit("title"), T.stringLit("completed")]),
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.object([
+        [T.stringLit("title"), T.string()],
+        [T.stringLit("completed"), T.boolean()],
+      ])
+    );
+  });
+
+  // TODO: uncomment when done
+  // test("Omit", () => {
+  //   expect(
+  //     evalT(
+  //       createEnvironment(`
+  //       type Todo = {
+  //         title: string;
+  //         description: string;
+  //         completed: boolean;
+  //       }
+  //       `).unwrap(),
+  //       T.typeReference("Omit", [
+  //         T.typeReference("Todo", []),
+  //         T.union([T.stringLit("title"), T.stringLit("completed")]),
+  //       ])
+  //     ).unwrap().type
+  //   ).equalsTypeNode(T.object([[T.stringLit("description"), T.string()]]));
+  // });
 });
 
 describe("mapped types", () => {
