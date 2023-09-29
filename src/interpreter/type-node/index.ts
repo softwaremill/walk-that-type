@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Option, none, some } from "this-is-ok/option";
 import { v4 as uuid } from "uuid";
-import { Environment } from "../environment";
 import { P, match } from "ts-pattern";
 
 export type NodeId = string;
@@ -300,7 +299,10 @@ export const T = {
   indexedAccessType,
 };
 
-export const traverse = (type: TypeNode, f: (t: TypeNode) => void) =>
+export const mapType = (
+  type: TypeNode,
+  f: (t: TypeNode) => TypeNode
+): TypeNode =>
   match(type)
     .with(
       {
@@ -316,205 +318,117 @@ export const traverse = (type: TypeNode, f: (t: TypeNode) => void) =>
           "void",
           "any",
           "unknown",
-          "never"
+          "never",
+          "infer"
         ),
       },
-      (t) => {
-        f(t);
-      }
+      (t) => f(t)
     )
     .with({ _type: "tuple" }, (type) => {
-      type.elements.forEach((e) => traverse(e, f));
-      f(type);
-    })
-    .with({ _type: "object" }, (type) => {
-      type.properties.forEach(([k, v]) => {
-        traverse(k, f);
-        traverse(v, f);
-      });
-      f(type);
-    })
-    .with({ _type: "array" }, (type) => {
-      f(type.elementType);
-      f(type);
-    })
-    .with({ _type: "typeReference" }, (type) => {
-      type.typeArguments.forEach((a) => traverse(a, f));
-      f(type);
-    })
-    .with({ _type: "union" }, (type) => {
-      type.members.forEach((m) => traverse(m, f));
-      f(type);
-    })
-    .with({ _type: "intersection" }, (type) => {
-      type.members.forEach((m) => traverse(m, f));
-      f(type);
-    })
-    .with({ _type: "conditionalType" }, (type) => {
-      traverse(type.checkType, f);
-      traverse(type.extendsType, f);
-      traverse(type.thenType, f);
-      traverse(type.elseType, f);
-      f(type);
-    })
-    .with({ _type: "rest" }, (type) => {
-      traverse(type.type, f);
-      f(type);
-    })
-    .with({ _type: "infer" }, () => {
-      // do nothing
-    })
-    .with({ _type: "typeDeclaration" }, () => {
-      // do nothing
-    })
-    .with({ _type: "mappedType" }, (type) => {
-      traverse(type.constraint, f);
-      const remapping = type.remapping;
-      if (remapping) {
-        traverse(remapping, f);
-      }
-      traverse(type.type, f);
-      f(type);
-    })
-    .with({ _type: "indexedAccessType" }, (type) => {
-      traverse(type.objectType, f);
-      traverse(type.indexType, f);
-      f(type);
-    })
-    .exhaustive();
-
-// TODO: would be good to express this with `traverse`
-export const mapType = (
-  type: TypeNode,
-  f: (t: TypeNode) => TypeNode
-): TypeNode => {
-  const result = f(type);
-  if (result !== type) {
-    return result;
-  }
-
-  switch (type._type) {
-    case "string":
-    case "number":
-    case "boolean":
-    case "undefined":
-    case "numberLiteral":
-    case "stringLiteral":
-    case "booleanLiteral":
-    case "null":
-    case "void":
-    case "any":
-    case "unknown":
-    case "never":
-      return f(type);
-
-    case "tuple": {
       const elements = type.elements.map((el) => mapType(el, f));
-      return {
+      return f({
         ...type,
         elements,
-      };
-    }
-
-    case "object": {
+      });
+    })
+    .with({ _type: "object" }, (type) => {
       const properties = type.properties.map(([k, val]) => {
         const newKey = mapType(k, f);
         const newVal = mapType(val, f);
         return [newKey, newVal];
       }) as [TypeNode, TypeNode][];
-      return {
+      return f({
         ...type,
         properties,
-      };
-    }
-
-    case "array":
-      return {
+      });
+    })
+    .with({ _type: "array" }, (type) =>
+      f({
         ...type,
         elementType: mapType(type.elementType, f),
-      };
-
-    case "typeReference": {
+      })
+    )
+    .with({ _type: "typeReference" }, (type) => {
       if (type.typeArguments.length === 0) {
         return f(type);
       } else {
-        const res = f(type);
-        if (res !== type) {
-          return res;
-        }
         const typeArguments = type.typeArguments.map((a) => mapType(a, f));
-        return {
+        return f({
           ...type,
           typeArguments,
-        };
+        });
       }
-    }
-
-    case "union": {
+    })
+    .with({ _type: "union" }, (type) => {
       const members = type.members.map((m) => mapType(m, f));
-      return {
+      return f({
         ...type,
         members,
-      };
-    }
-
-    case "intersection": {
+      });
+    })
+    .with({ _type: "intersection" }, (type) => {
       const members = type.members.map((m) => mapType(m, f));
-      return {
+      return f({
         ...type,
         members,
-      };
-    }
-
-    case "conditionalType": {
+      });
+    })
+    .with({ _type: "conditionalType" }, (type) => {
       const checkType = mapType(type.checkType, f);
       const extendsType = mapType(type.extendsType, f);
       const thenType = mapType(type.thenType, f);
       const elseType = mapType(type.elseType, f);
 
-      return {
+      return f({
         ...type,
         checkType,
         extendsType,
         thenType,
         elseType,
-      };
-    }
-
-    case "mappedType": {
+      });
+    })
+    .with({ _type: "rest" }, (type) =>
+      f({
+        ...type,
+        type: mapType(type.type, f),
+      })
+    )
+    .with({ _type: "typeDeclaration" }, (type) => {
+      const { type: t } = type;
+      return f({
+        ...type,
+        type: mapType(t, f),
+      });
+    })
+    .with({ _type: "mappedType" }, (type) => {
       const constraint = mapType(type.constraint, f);
       const remapping = type.remapping ? mapType(type.remapping, f) : undefined;
       const type_ = mapType(type.type, f);
 
-      return {
+      return f({
         ...type,
         constraint,
         remapping,
         type: type_,
-      };
-    }
-
-    case "indexedAccessType": {
+      });
+    })
+    .with({ _type: "indexedAccessType" }, (type) => {
       const indexType = mapType(type.indexType, f);
       const objectType = mapType(type.objectType, f);
 
-      return {
+      return f({
         ...type,
         indexType,
         objectType,
-      };
-    }
+      });
+    })
+    .exhaustive();
 
-    case "rest":
-      return {
-        ...type,
-        type: mapType(type.type, f),
-      };
-
-    case "infer":
-    case "typeDeclaration":
-      return type;
-  }
+export const traverse = (type: TypeNode, f: (t: TypeNode) => void) => {
+  mapType(type, (tt) => {
+    f(tt);
+    return tt;
+  });
 };
 
 export const replaceTypeReference = (
@@ -532,103 +446,12 @@ export const replaceTypeReference = (
   );
 
 export const withoutNodeIds = (type: TypeNode): TypeNodeWithoutId => {
-  switch (type._type) {
-    case "string":
-    case "number":
-    case "boolean":
-    case "undefined":
-    case "numberLiteral":
-    case "stringLiteral":
-    case "booleanLiteral":
-    case "null":
-    case "void":
-    case "any":
-    case "unknown":
-    case "infer":
-    case "never": {
-      const { nodeId, ...rest } = type;
-      return rest;
-    }
+  const res = mapType(type, (t) => {
+    const { nodeId, ...rest } = t;
+    return rest as any;
+  });
 
-    case "union":
-    case "intersection": {
-      const { nodeId, members, ...rest } = type;
-      return {
-        ...rest,
-        members: members.map(withoutNodeIds),
-      };
-    }
-
-    case "typeDeclaration":
-    case "rest": {
-      const { nodeId, type: t, ...rest } = type;
-      return {
-        ...rest,
-        type: withoutNodeIds(t),
-      };
-    }
-    case "tuple": {
-      const { nodeId, elements, ...rest } = type;
-      return {
-        ...rest,
-        elements: elements.map(withoutNodeIds),
-      };
-    }
-
-    case "object": {
-      const { nodeId, properties, ...rest } = type;
-      return {
-        ...rest,
-        properties: properties.map(([k, v]) => [
-          withoutNodeIds(k),
-          withoutNodeIds(v),
-        ]),
-      };
-    }
-
-    case "array": {
-      const { nodeId, elementType, ...rest } = type;
-      return {
-        ...rest,
-        elementType: withoutNodeIds(elementType),
-      };
-    }
-    case "typeReference": {
-      const { nodeId, typeArguments, ...rest } = type;
-      return {
-        ...rest,
-        typeArguments: typeArguments.map(withoutNodeIds),
-      };
-    }
-    case "conditionalType": {
-      const { nodeId, checkType, extendsType, thenType, elseType, ...rest } =
-        type;
-      return {
-        ...rest,
-        checkType: withoutNodeIds(checkType),
-        extendsType: withoutNodeIds(extendsType),
-        thenType: withoutNodeIds(thenType),
-        elseType: withoutNodeIds(elseType),
-      };
-    }
-    case "mappedType": {
-      const { nodeId, constraint, remapping, type: t, ...rest } = type;
-      return {
-        ...rest,
-        constraint: withoutNodeIds(constraint),
-        remapping: remapping ? withoutNodeIds(remapping) : undefined,
-        type: withoutNodeIds(t),
-      };
-    }
-    case "indexedAccessType": {
-      const { indexType, objectType, nodeId, ...rest } = type;
-      return {
-        ...rest,
-        indexType: withoutNodeIds(indexType),
-        objectType: withoutNodeIds(objectType),
-      };
-    }
-  }
+  return res;
 };
 
 export const findTypeNodeById = (t: TypeNode, id: NodeId): Option<TypeNode> => {
@@ -642,23 +465,6 @@ export const findTypeNodeById = (t: TypeNode, id: NodeId): Option<TypeNode> => {
     }
   });
   return result;
-};
-
-export const updateTypeNode = (
-  root: TypeNode,
-  id: NodeId,
-  f: (t: TypeNode) => [TypeNode, Environment]
-): [TypeNode, Environment] => {
-  let env: Environment = {};
-  traverse(root, (t) => {
-    if (t.nodeId === id) {
-      const [newT, newEnv] = f(t);
-      Object.assign(t, newT);
-      env = newEnv;
-    }
-  });
-
-  return [{ ...root }, env];
 };
 
 export const replaceNode = (
@@ -677,75 +483,79 @@ export const replaceNode = (
   });
 };
 
-export const printTypeNode = (t: TypeNode): string => {
-  switch (t._type) {
-    case "string":
-    case "number":
-    case "boolean":
-    case "undefined":
-    case "numberLiteral":
-    case "stringLiteral":
-    case "booleanLiteral":
-    case "null":
-    case "void":
-    case "any":
-    case "unknown":
-    case "never":
-      return t.text();
-
-    case "object":
-      return `{${t.properties.map(
-        ([key, value]) => `\t[${printTypeNode(key)}]: ${printTypeNode(value)}`
-      )}}`;
-
-    case "tuple":
-      return `[${t.elements.map(printTypeNode).join(", ")}]`;
-
-    case "array":
-      return `${printTypeNode(t.elementType)}[]`;
-
-    case "typeReference":
-      return `${t.name}${
-        t.typeArguments.length > 0
-          ? "<" + t.typeArguments.map(printTypeNode).join(", ") + ">"
-          : ""
-      }`;
-
-    case "union":
-      return t.members.map(printTypeNode).join(" | ");
-
-    case "intersection":
-      return t.members.map(printTypeNode).join(" & ");
-
-    case "conditionalType":
-      return `${printTypeNode(t.checkType)} extends ${printTypeNode(
-        t.extendsType
-      )} ? ${printTypeNode(t.thenType)} : ${printTypeNode(t.elseType)}`;
-
-    case "mappedType":
-      return `{
+export const printTypeNode = (t: TypeNode): string =>
+  match(t)
+    .with(
+      {
+        _type: P.union(
+          "string",
+          "number",
+          "boolean",
+          "undefined",
+          "numberLiteral",
+          "stringLiteral",
+          "booleanLiteral",
+          "null",
+          "void",
+          "any",
+          "unknown",
+          "never"
+        ),
+      },
+      (t) => t.text()
+    )
+    .with(
+      { _type: "tuple" },
+      (t) => `[${t.elements.map(printTypeNode).join(", ")}]`
+    )
+    .with(
+      { _type: "object" },
+      (t) =>
+        `{${t.properties.map(
+          ([key, value]) => `\t[${printTypeNode(key)}]: ${printTypeNode(value)}`
+        )}}`
+    )
+    .with({ _type: "array" }, (t) => `${printTypeNode(t.elementType)}[]`)
+    .with(
+      { _type: "typeReference" },
+      (t) =>
+        `${t.name}${
+          t.typeArguments.length > 0
+            ? "<" + t.typeArguments.map(printTypeNode).join(", ") + ">"
+            : ""
+        }`
+    )
+    .with({ _type: "union" }, (t) => t.members.map(printTypeNode).join(" | "))
+    .with({ _type: "intersection" }, (t) =>
+      t.members.map(printTypeNode).join(" & ")
+    )
+    .with(
+      { _type: "conditionalType" },
+      (t) =>
+        `${printTypeNode(t.checkType)} extends ${printTypeNode(
+          t.extendsType
+        )} ? ${printTypeNode(t.thenType)} : ${printTypeNode(t.elseType)}`
+    )
+    .with({ _type: "rest" }, (t) => `...${printTypeNode(t.type)}`)
+    .with({ _type: "infer" }, (t) => `infer ${t.name}`)
+    .with(
+      { _type: "typeDeclaration" },
+      (t) => `type ${t.name} = ${printTypeNode(t.type)}`
+    )
+    .with(
+      { _type: "mappedType" },
+      (t) =>
+        `{
         [${t.keyName} in ${printTypeNode(t.constraint)}${
           t.remapping ? "as " + printTypeNode(t.remapping) : ""
         }]: ${printTypeNode(t.type)}
-      }`;
-
-    case "rest":
-      return `...${printTypeNode(t.type)}`;
-
-    case "infer":
-      return `infer ${t.name}`;
-
-    case "typeDeclaration":
-      return `type ${t.name} = ${printTypeNode(t.type)}`;
-
-    case "indexedAccessType":
-      return `${printTypeNode(t.objectType)}[${printTypeNode(t.indexType)}]`;
-
-    default:
-      console.warn("???", t);
-      return "";
-  }
-};
+      }`
+    )
+    .with(
+      { _type: "indexedAccessType" },
+      (t) => `${printTypeNode(t.objectType)}[${printTypeNode(t.indexType)}]`
+    )
+    .exhaustive();
 
 export const deepEquals = (t1: TypeNode, t2: TypeNode): boolean =>
   JSON.stringify(withoutNodeIds(t1)) === JSON.stringify(withoutNodeIds(t2));
