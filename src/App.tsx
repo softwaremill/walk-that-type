@@ -1,4 +1,14 @@
-import { Button, Divider, Flex, Grid, Stack, Text, Title } from "@mantine/core";
+import {
+  Box,
+  Button,
+  Divider,
+  Flex,
+  Grid,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import GitHubButton from "react-github-btn";
 
 import { printTypeNode } from "./interpreter/type-node";
 import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
@@ -137,94 +147,142 @@ const App = () => {
   );
 
   return (
-    <Stack p={32} w="100%" mih={"100vh"} mah={"100vh"}>
-      <Title color="#35545a">walk-that-type 0.1.0</Title>
-
-      <Divider size="sm" color="#b2cdd2" />
-
-      <Grid grow gutter="lg" mah="100%">
-        <Grid.Col span={4}>
-          <Stack>
-            <Title color="#35545a" order={3}>
-              Examples
-            </Title>
-            <Select
-              value={state.currentExampleName.get()}
-              onChange={(name) => {
-                if (name) {
-                  const idx = EXAMPLES.findIndex((e) => e.name === name);
-                  state.envSource.set(EXAMPLES[idx].envSource);
-                  state.typeSource.set(EXAMPLES[idx].typeSource);
-                  state.currentExampleName.set(name);
-                }
-              }}
-              data={EXAMPLES.map((e) => e.name)}
-            />
-
-            <Title color="#35545a" order={3}>
-              Environment editor
-            </Title>
-
-            <CodeEditor
-              code={envSource}
-              onCodeUpdate={(t) => {
-                state.envSource.set(t);
-              }}
-            />
-            <Flex w="100%" justify="flex-end">
-              <Button
-                variant="light"
-                color="cyan"
-                compact
-                onClick={() => {
-                  formatCode(envSource).then((formatted) => {
-                    state.envSource.set(formatted);
-                  });
-                }}
-              >
-                Format
-              </Button>
-            </Flex>
-          </Stack>
-        </Grid.Col>
-
-        <Grid.Col span={6} mah="85vh">
-          <Stack mah="100%" px={6}>
+    <Box bg="rgb(9, 5, 15)">
+      <Box
+        sx={{
+          position: "fixed",
+          top: "calc(50% - 100px)",
+          bottom: "50%",
+          left: "calc(50% - 300px)",
+          right: "50%",
+          width: "400px",
+          height: "400px",
+          background: "palevioletred",
+          borderRadius: "50%",
+          filter: "blur(300px)",
+        }}
+      />
+      <Box
+        sx={{
+          position: "fixed",
+          top: "calc(30% - 100px)",
+          bottom: "50%",
+          right: "calc(20% - 300px)",
+          left: "50%",
+          width: "400px",
+          height: "400px",
+          background: "#ACFCD9",
+          borderRadius: "50%",
+          filter: "blur(300px)",
+        }}
+      />
+      <Stack
+        p={32}
+        w="100%"
+        mih={"100vh"}
+        mah={"100vh"}
+        sx={{ position: "relative" }}
+      >
+        <Flex justify="flex-end">
+          <GitHubButton
+            href="https://github.com/softwaremill/walk-that-type"
+            data-show-count="true"
+            aria-label="Star softwaremill/walk-that-type on GitHub"
+          >
+            Star
+          </GitHubButton>
+        </Flex>
+        <Grid grow gutter="lg" mah="100%">
+          <Grid.Col span={4}>
             <Stack>
-              <Title color="#35545a" order={3}>
-                Type to evaluate
-              </Title>
+              <Title order={3}>Examples</Title>
+              <Select
+                value={state.currentExampleName.get()}
+                onChange={(name) => {
+                  if (name) {
+                    const idx = EXAMPLES.findIndex((e) => e.name === name);
+                    state.envSource.set(EXAMPLES[idx].envSource);
+                    state.typeSource.set(EXAMPLES[idx].typeSource);
+                    state.currentExampleName.set(name);
+                  }
+                }}
+                data={EXAMPLES.map((e) => e.name)}
+              />
+
+              <Title order={3}>Environment editor</Title>
+
               <CodeEditor
-                code={typeSource}
+                code={envSource}
                 onCodeUpdate={(t) => {
-                  state.typeSource.set(t);
+                  state.envSource.set(t);
                 }}
               />
+              <Flex w="100%" justify="flex-end">
+                <Button
+                  variant="light"
+                  color="cyan"
+                  compact
+                  onClick={() => {
+                    formatCode(envSource).then((formatted) => {
+                      state.envSource.set(formatted);
+                    });
+                  }}
+                >
+                  Format
+                </Button>
+              </Flex>
             </Stack>
+          </Grid.Col>
 
-            <Divider color="#b2cdd2" my={"md"} />
+          <Grid.Col span={6} mah="85vh">
+            <Stack mah="100%" px={6}>
+              <Stack>
+                <Title order={3}>Type to evaluate</Title>
+                <CodeEditor
+                  code={typeSource}
+                  onCodeUpdate={(t) => {
+                    state.typeSource.set(t);
+                  }}
+                />
+              </Stack>
 
-            <Stack mah="100%" sx={{ overflowY: "auto" }}>
-              {trace.isSome && renderTrace(trace.value)}
+              <Divider my={"md"} />
+
+              <Stack mah="100%" sx={{ overflowY: "auto" }}>
+                {trace.isSome && renderTrace(trace.value)}
+              </Stack>
             </Stack>
-          </Stack>
-        </Grid.Col>
-      </Grid>
+          </Grid.Col>
+        </Grid>
 
-      <Flex pos={"fixed"} bottom={16} w="100%" justify="center">
-        <Text size={14} color="gray.7">
-          Created by{" "}
-          <Text
-            weight="bold"
-            component="a"
-            href="https://softwaremill.com/"
-            target="_blank"
-          >
-            SoftwareMill
+        <Flex
+          pos={"fixed"}
+          bottom={16}
+          w="100%"
+          justify="center"
+          align="center"
+          gap={8}
+        >
+          <Text size={14} color="gray.4">
+            Walk That Type
           </Text>
-        </Text>
-      </Flex>
-    </Stack>
+          <Text size={14} color="gray.4">
+            |
+          </Text>
+          <Text size={14} color="gray.4">
+            Created by{" "}
+            <Text
+              weight="bold"
+              component="a"
+              href="https://softwaremill.com/"
+              target="_blank"
+            >
+              SoftwareMill
+            </Text>
+          </Text>
+        </Flex>
+      </Stack>
+    </Box>
   );
 };
 

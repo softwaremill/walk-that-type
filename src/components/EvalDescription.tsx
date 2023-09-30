@@ -23,8 +23,17 @@ export const EvalDescription = ({
   return (
     <Stack w="100%" align="center">
       <DividingLine />
-      <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Title color="#35545a" order={6} mb={6}>
+      <Card
+        shadow="sm"
+        padding="lg"
+        radius="md"
+        sx={{
+          border: "1px solid rgba(8, 2, 2, 0.45)",
+          backgroundColor: "rgba(8, 2, 2, 0.38)",
+          backdropFilter: "blur(6.1px)",
+        }}
+      >
+        <Title order={6} mb={6}>
           {match(desc._type)
             .with("conditionalType", () => "Conditional type")
             .with("substituteWithDefinition", () => "Definition Substitution")
@@ -48,7 +57,7 @@ export const EvalDescription = ({
             },
             ({ inferredTypes, checkType, extendsType }) => (
               <Stack>
-                <Text color="gray.6" size={13}>
+                <Text color="gray.4" size={13}>
                   <Code>{printTypeNode(checkType)}</Code> extends{" "}
                   <Code>{printTypeNode(extendsType)}</Code> with the following
                   inferred types:
@@ -78,7 +87,7 @@ export const EvalDescription = ({
             },
             ({ extendsType, checkType }) => (
               <Stack>
-                <Text color="gray.6" size={13}>
+                <Text color="gray.4" size={13}>
                   <Code>{printTypeNode(checkType)}</Code> extends{" "}
                   <Code>{printTypeNode(extendsType)}</Code>
                 </Text>
@@ -94,7 +103,7 @@ export const EvalDescription = ({
             },
             ({ checkType, extendsType }) => (
               <Stack>
-                <Text color="gray.6" size={13}>
+                <Text color="gray.4" size={13}>
                   <Code>{printTypeNode(checkType)}</Code> doesn't extend{" "}
                   <Code>{printTypeNode(extendsType)}</Code>
                 </Text>
@@ -107,7 +116,7 @@ export const EvalDescription = ({
               name: P.select(),
             },
             (name) => (
-              <Text color="gray.6" size={13}>
+              <Text color="gray.4" size={13}>
                 Substituting <Code>{name}</Code> with the definition.
               </Text>
             )
@@ -120,10 +129,10 @@ export const EvalDescription = ({
             },
             ({ text, docsUrl }) => (
               <>
-                <Text color="gray.6" size={13}>
+                <Text color="gray.4" size={13}>
                   Applying built-in type <Code>{text}</Code>.
                 </Text>
-                <Text color="gray.6" size={13}>
+                <Text color="gray.4" size={13}>
                   Learn more about it{" "}
                   <Text
                     size={13}
@@ -146,12 +155,12 @@ export const EvalDescription = ({
             },
             ({ typeName }) => (
               <>
-                <Text color="gray.6" size={13}>
+                <Text color="gray.4" size={13}>
                   <Code>{typeName}</Code>'s argument is a union type and it can
                   be distributed, i.e. <Code>{typeName}</Code> is applied to
                   each union member.
                 </Text>
-                <Text color="gray.6" size={13}>
+                <Text color="gray.4" size={13}>
                   Learn more about it{" "}
                   <Text
                     size={13}
@@ -175,7 +184,7 @@ export const EvalDescription = ({
               restElement: P.select(),
             },
             (restEl) => (
-              <Text color="gray.6" size={13}>
+              <Text color="gray.4" size={13}>
                 Applying rest operator to <Code>{printTypeNode(restEl)}</Code>.
               </Text>
             )
@@ -186,7 +195,7 @@ export const EvalDescription = ({
               union: P.select(),
             },
             (unionEl) => (
-              <Text color="gray.6" size={13}>
+              <Text color="gray.4" size={13}>
                 Simplifying the union <Code>{printTypeNode(unionEl)}</Code>.
               </Text>
             )
@@ -196,7 +205,7 @@ export const EvalDescription = ({
               _type: "mappedType",
             },
             () => (
-              <Text color="gray.6" size={13}>
+              <Text color="gray.4" size={13}>
                 Simplifying the mapped type.
               </Text>
             )
@@ -206,7 +215,7 @@ export const EvalDescription = ({
               _type: "indexedAccessType",
             },
             () => (
-              <Text color="gray.6" size={13}>
+              <Text color="gray.4" size={13}>
                 Accessing type property.
               </Text>
             )

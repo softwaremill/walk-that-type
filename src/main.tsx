@@ -6,7 +6,11 @@ import "./index.css";
 import "./CodeEditor.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <MantineProvider withGlobalStyles withNormalizeCSS>
+  <MantineProvider
+    withGlobalStyles
+    withNormalizeCSS
+    theme={{ colorScheme: "dark" }}
+  >
     <React.StrictMode>
       <App />
     </React.StrictMode>

@@ -12,6 +12,7 @@ export const CodeEditor = ({ code, onCodeUpdate }: CodeEditorProps) => {
       language="typescript"
       value={code}
       onChange={(e) => onCodeUpdate(e.target.value)}
+      data-color-mode="dark"
     />
   );
 };
