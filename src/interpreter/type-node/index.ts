@@ -64,6 +64,10 @@ type TypeNodeBase<T> = T &
         indexType: TypeNodeBase<T>;
         objectType: TypeNodeBase<T>;
       }
+    | {
+        _type: "keyof";
+        type: TypeNodeBase<T>;
+      }
   );
 
 export type TypeNode = TypeNodeBase<{ text: () => string; nodeId: NodeId }>;
@@ -214,6 +218,13 @@ const array = (elementType: TypeNode): TypeNode => ({
   nodeId: uuid(),
 });
 
+const keyofKeyword = (type: TypeNode): TypeNode => ({
+  _type: "keyof",
+  type,
+  text: () => `keyof ${type.text()}`,
+  nodeId: uuid(),
+});
+
 const conditionalType = (
   checkType: TypeNode,
   extendsType: TypeNode,
@@ -297,6 +308,7 @@ export const T = {
   object: objectType,
   mappedType,
   indexedAccessType,
+  keyof: keyofKeyword,
 };
 
 export const mapType = (
@@ -420,6 +432,14 @@ export const mapType = (
         ...type,
         indexType,
         objectType,
+      });
+    })
+    .with({ _type: "keyof" }, (type) => {
+      const type_ = mapType(type.type, f);
+
+      return f({
+        ...type,
+        type: type_,
       });
     })
     .exhaustive();
@@ -555,6 +575,7 @@ export const printTypeNode = (t: TypeNode): string =>
       { _type: "indexedAccessType" },
       (t) => `${printTypeNode(t.objectType)}[${printTypeNode(t.indexType)}]`
     )
+    .with({ _type: "keyof" }, (t) => `keyof ${printTypeNode(t.type)}`)
     .exhaustive();
 
 export const deepEquals = (t1: TypeNode, t2: TypeNode): boolean =>

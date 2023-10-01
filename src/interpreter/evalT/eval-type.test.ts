@@ -311,6 +311,16 @@ describe("global types", () => {
         ])
       ).unwrap().type
     ).equalsTypeNode(T.union([T.stringLit("b"), T.stringLit("c")]));
+
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Exclude", [
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.union([T.stringLit("a"), T.stringLit("b")]),
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("c"));
   });
 
   test("Extract", () => {
@@ -348,24 +358,23 @@ describe("global types", () => {
     );
   });
 
-  // TODO: uncomment when done
-  // test("Omit", () => {
-  //   expect(
-  //     evalT(
-  //       createEnvironment(`
-  //       type Todo = {
-  //         title: string;
-  //         description: string;
-  //         completed: boolean;
-  //       }
-  //       `).unwrap(),
-  //       T.typeReference("Omit", [
-  //         T.typeReference("Todo", []),
-  //         T.union([T.stringLit("title"), T.stringLit("completed")]),
-  //       ])
-  //     ).unwrap().type
-  //   ).equalsTypeNode(T.object([[T.stringLit("description"), T.string()]]));
-  // });
+  test("Omit", () => {
+    expect(
+      evalT(
+        createEnvironment(`
+        type Todo = {
+          title: string;
+          description: string;
+          completed: boolean;
+        }
+        `).unwrap(),
+        T.typeReference("Omit", [
+          T.typeReference("Todo", []),
+          T.union([T.stringLit("title"), T.stringLit("completed")]),
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(T.object([[T.stringLit("description"), T.string()]]));
+  });
 });
 
 describe("mapped types", () => {
@@ -516,6 +525,25 @@ describe("indexed access type", () => {
     ).equalsTypeNode(T.union([T.string(), T.number()]));
   });
 
+  test("array[number]", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(
+          T.tuple([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.number()
+        )
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")])
+    );
+
+    expect(
+      evalT(EMPTY_ENV, T.indexedAccessType(T.tuple([]), T.number())).unwrap()
+        .type
+    ).equalsTypeNode(T.never());
+  });
+
   test("array length prop", () => {
     expect(
       evalT(
@@ -533,5 +561,21 @@ describe("indexed access type", () => {
         T.indexedAccessType(T.tuple([]), T.stringLit("length"))
       ).unwrap().type
     ).equalsTypeNode(T.numberLit(0));
+  });
+});
+
+describe("keyof", () => {
+  test("keyof with object", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.keyof(
+          T.object([
+            [T.stringLit("a"), T.string()],
+            [T.stringLit("b"), T.number()],
+          ])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.union([T.stringLit("a"), T.stringLit("b")]));
   });
 });

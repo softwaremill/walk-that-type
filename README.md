@@ -32,7 +32,7 @@ Feel free to report any issues or feature requests using Github issues.
 - [x] mapped types
 - [x] distributed union
 - [x] indexed access types
-- [ ] keyof
+- [x] keyof
 - [ ] intersection types
 - [ ] function types
 - [ ] type variance
@@ -47,7 +47,7 @@ Feel free to report any issues or feature requests using Github issues.
   - [x] Extract,
   - [x] Exclude
   - [x] Pick,
-  - [ ] Omit (needs keyof)
+  - [x] Omit
   - [ ] Partial, Required (needs optional properties)
   - [ ] Readonly (needs readonly)
   - [ ] NonNullable (needs intersection and `{}` type)

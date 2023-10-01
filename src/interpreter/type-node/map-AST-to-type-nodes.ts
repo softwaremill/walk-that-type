@@ -121,6 +121,13 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
         mapASTToTypeNodes(node.indexType).expect("couldn't parse index type")
       )
     );
+  } else if (
+    ts.isTypeOperatorNode(node) &&
+    node.operator === ts.SyntaxKind.KeyOfKeyword
+  ) {
+    return ok(
+      T.keyof(mapASTToTypeNodes(node.type).expect("couldn't parse type"))
+    );
   } else {
     console.error(node, `Unsupported type ${ts.SyntaxKind[node.kind]}`);
     return err(new Error(`Unsupported type ${ts.SyntaxKind[node.kind]}`));

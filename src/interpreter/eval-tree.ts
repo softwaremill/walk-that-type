@@ -21,6 +21,7 @@ import { accessType, evalT } from "./evalT/eval-type";
 import { extendsT } from "./extendsT/extendsT";
 import { intrinsicTypes } from "./evalT/intrinsic-types";
 import { checkForDistributedUnion, distributeUnion } from "./distributed-union";
+import { sequence } from "./type-node/map-AST-to-type-nodes";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 
@@ -103,6 +104,9 @@ export type EvalStep = {
       }
     | {
         _type: "indexedAccessType";
+      }
+    | {
+        _type: "keyof";
       };
 };
 
@@ -196,6 +200,14 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
 
     .with({ _type: "mappedType" }, (t) => {
       const res = chooseNodeToEval(env, t.constraint);
+      if (res.isSome) {
+        return res;
+      }
+      return some(t.nodeId);
+    })
+
+    .with({ _type: "keyof" }, (t) => {
+      const res = chooseNodeToEval(env, t.type);
       if (res.isSome) {
         return res;
       }
@@ -319,7 +331,32 @@ const calculateNextStep = (
         },
       });
     })
-    .with(P.shape({ _type: "conditionalType" }).select(), (tt) => {
+
+    .with({ _type: "keyof" }, (t) => {
+      return Do(() => {
+        // we expect the inner type to be already evaluated
+        const innerType = t.type;
+        if (innerType._type !== "object") {
+          console.error("keyof can only be applied to object types");
+          return none;
+        }
+
+        const updated = T.union(
+          innerType.properties.map(([k]) => k)
+        ) as TypeNode;
+
+        return some({
+          nodeToEval: targetNodeId,
+          result: replaceNode(type, targetNodeId, updated),
+          resultEnv: env,
+          evalDescription: {
+            _type: "keyof",
+          },
+        });
+      });
+    })
+
+    .with({ _type: "conditionalType" }, (tt) => {
       return Do(() => {
         const lhs = evalT(env, tt.checkType).ok().bind().type;
         const rhs = evalT(env, tt.extendsType).ok().bind().type;
@@ -411,11 +448,15 @@ const calculateNextStep = (
         throw new Error(`Unknown type ${tt.name}`);
       }
 
-      return match(checkForDistributedUnion(typeDeclaration, tt.typeArguments))
+      const evaledArgs = sequence(
+        tt.typeArguments.map((type) => evalT(env, type).map(({ type }) => type))
+      ).expect("Could not eval type arguments");
+
+      return match(checkForDistributedUnion(typeDeclaration, evaledArgs))
         .when(
           (indices) => indices.length > 0,
           (indices) => {
-            const updated = distributeUnion(tt.name, tt.typeArguments, indices);
+            const updated = distributeUnion(tt.name, evaledArgs, indices);
 
             return some({
               nodeToEval: targetNodeId,

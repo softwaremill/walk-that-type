@@ -32,6 +32,22 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
+    name: "Omit",
+    envSource: `
+    type Todo {
+      title: string;
+      description: string;
+      completed: boolean;
+    }
+     `,
+    typeSource: `Omit<Todo, "title" | "completed">`,
+  },
+  {
+    name: "keyof",
+    envSource: "",
+    typeSource: `keyof { a: 1, b: 2, c: 3}`,
+  },
+  {
     name: "Pick",
     envSource: `
     type Todo {

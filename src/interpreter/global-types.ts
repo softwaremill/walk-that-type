@@ -32,15 +32,17 @@ export const globalTypes: Environment = {
       T.indexedAccessType(T.typeReference("T", []), T.typeReference("P", []))
     )
   ) as TypeDeclaration,
-  // TODO: needs keyof
-  // Omit: T.typeDeclaration(
-  //   "Omit",
-  //   ["T", "K"],
-  //   T.mappedType(
-  //     "P",
-  //     ,
-  //     undefined,
-  //     T.indexedAccessType(T.typeReference("T", []), T.typeReference("P", []))
-  //   )
-  // ) as TypeDeclaration,
+  Omit: T.typeDeclaration(
+    "Omit",
+    ["T", "K"],
+    T.mappedType(
+      "P",
+      T.typeReference("Exclude", [
+        T.keyof(T.typeReference("T", [])),
+        T.typeReference("K", []),
+      ]),
+      undefined,
+      T.indexedAccessType(T.typeReference("T", []), T.typeReference("P", []))
+    )
+  ) as TypeDeclaration,
 };
