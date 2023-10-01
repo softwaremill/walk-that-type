@@ -234,6 +234,16 @@ export const evalT = (
       })
     )
 
+    .with({ _type: "keyof" }, (t) =>
+      evalT(env, t.type).map(({ type }) => {
+        if (type._type !== "object") {
+          return { type: T.any(), env };
+        }
+
+        return { type: T.union(type.properties.map(([k]) => k)), env };
+      })
+    )
+
     .otherwise(() => {
       console.error("unhandled type", type);
       return err(new Error("unhandled type in evalT"));

@@ -535,3 +535,19 @@ describe("indexed access type", () => {
     ).equalsTypeNode(T.numberLit(0));
   });
 });
+
+describe("keyof", () => {
+  test("keyof with object", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.keyof(
+          T.object([
+            [T.stringLit("a"), T.string()],
+            [T.stringLit("b"), T.number()],
+          ])
+        )
+      ).unwrap().type
+    ).equalsTypeNode(T.union([T.stringLit("a"), T.stringLit("b")]));
+  });
+});

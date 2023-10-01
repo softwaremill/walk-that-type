@@ -34,6 +34,7 @@ export const EvalDescription = ({
             .with("distributiveUnion", () => "Distribute over union")
             .with("mappedType", () => "Mapped type")
             .with("indexedAccessType", () => "Indexed Access Types")
+            .with("keyof", () => "keyof operator")
             .exhaustive()}
         </Title>
 
@@ -208,6 +209,16 @@ export const EvalDescription = ({
             () => (
               <Text color="gray.6" size={13}>
                 Accessing type property.
+              </Text>
+            )
+          )
+          .with(
+            {
+              _type: "keyof",
+            },
+            () => (
+              <Text color="gray.6" size={13}>
+                Applying <Code>keyof</Code> operator.
               </Text>
             )
           )

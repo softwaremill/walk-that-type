@@ -103,6 +103,9 @@ export type EvalStep = {
       }
     | {
         _type: "indexedAccessType";
+      }
+    | {
+        _type: "keyof";
       };
 };
 
@@ -196,6 +199,14 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
 
     .with({ _type: "mappedType" }, (t) => {
       const res = chooseNodeToEval(env, t.constraint);
+      if (res.isSome) {
+        return res;
+      }
+      return some(t.nodeId);
+    })
+
+    .with({ _type: "keyof" }, (t) => {
+      const res = chooseNodeToEval(env, t.type);
       if (res.isSome) {
         return res;
       }
@@ -319,7 +330,32 @@ const calculateNextStep = (
         },
       });
     })
-    .with(P.shape({ _type: "conditionalType" }).select(), (tt) => {
+
+    .with({ _type: "keyof" }, (t) => {
+      return Do(() => {
+        // we expect the inner type to be already evaluated
+        const innerType = t.type;
+        if (innerType._type !== "object") {
+          console.error("keyof can only be applied to object types");
+          return none;
+        }
+
+        const updated = T.union(
+          innerType.properties.map(([k]) => k)
+        ) as TypeNode;
+
+        return some({
+          nodeToEval: targetNodeId,
+          result: replaceNode(type, targetNodeId, updated),
+          resultEnv: env,
+          evalDescription: {
+            _type: "keyof",
+          },
+        });
+      });
+    })
+
+    .with({ _type: "conditionalType" }, (tt) => {
       return Do(() => {
         const lhs = evalT(env, tt.checkType).ok().bind().type;
         const rhs = evalT(env, tt.extendsType).ok().bind().type;

@@ -22,6 +22,11 @@ enableLegendStateReact();
 
 const EXAMPLES = [
   {
+    name: "keyof",
+    envSource: "",
+    typeSource: `keyof { a: 1, b: 2, c: 3}`,
+  },
+  {
     name: "Pick",
     envSource: `
     type Todo {
