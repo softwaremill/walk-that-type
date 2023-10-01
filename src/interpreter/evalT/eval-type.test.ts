@@ -516,6 +516,25 @@ describe("indexed access type", () => {
     ).equalsTypeNode(T.union([T.string(), T.number()]));
   });
 
+  test("array[number]", () => {
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.indexedAccessType(
+          T.tuple([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.number()
+        )
+      ).unwrap().type
+    ).equalsTypeNode(
+      T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")])
+    );
+
+    expect(
+      evalT(EMPTY_ENV, T.indexedAccessType(T.tuple([]), T.number())).unwrap()
+        .type
+    ).equalsTypeNode(T.never());
+  });
+
   test("array length prop", () => {
     expect(
       evalT(

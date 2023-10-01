@@ -296,6 +296,14 @@ export function accessType(
 
       return ok(T.union(vals));
     })
+    .with([{ _type: "tuple" }, { _type: "number" }], ([tuple]) => {
+      const vals = tuple.elements;
+      if (vals.length === 0) {
+        return ok(T.never());
+      }
+
+      return ok(T.union(vals));
+    })
     .with(
       [{ _type: "tuple" }, { _type: "stringLiteral", value: "length" }],
       ([tuple]) => {
