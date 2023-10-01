@@ -133,20 +133,21 @@ export const evalT = (
         return err(new Error(`unknown type ${t.name}`));
       }
 
-      return match(checkForDistributedUnion(typeDeclaration, t.typeArguments))
+      const evaledArgs = sequence(
+        t.typeArguments.map((type) => evalT(env, type).map(({ type }) => type))
+      ).expect("Could not eval type arguments");
+
+      return match(checkForDistributedUnion(typeDeclaration, evaledArgs))
         .when(
           (indices) => indices.length > 0,
           (indices) => {
-            return evalT(
-              env,
-              distributeUnion(t.name, t.typeArguments, indices)
-            );
+            return evalT(env, distributeUnion(t.name, evaledArgs, indices));
           }
         )
         .otherwise(() => {
           const newEnv = { ...env };
           typeDeclaration.typeParameters.forEach((ty, idx) => {
-            addToEnvironment(newEnv, ty, t.typeArguments[idx]);
+            addToEnvironment(newEnv, ty, evaledArgs[idx]);
           });
 
           return evalT(newEnv, typeDeclaration.type);
@@ -194,11 +195,17 @@ export const evalT = (
       return Do(() => {
         const constraintUnion = evalT(env, t.constraint).bind().type as Extract<
           TypeNode,
-          { _type: "union" }
+          { _type: "union" } | { _type: "stringLiteral" }
         >;
+
+        const constraints =
+          constraintUnion._type === "union"
+            ? constraintUnion.members
+            : [constraintUnion];
+
         return ok({
           type: T.object(
-            constraintUnion.members
+            constraints
               .map((member) => {
                 // sub `key` for member and eval type
                 const newEnv = { ...env };

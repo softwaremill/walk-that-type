@@ -311,6 +311,16 @@ describe("global types", () => {
         ])
       ).unwrap().type
     ).equalsTypeNode(T.union([T.stringLit("b"), T.stringLit("c")]));
+
+    expect(
+      evalT(
+        EMPTY_ENV,
+        T.typeReference("Exclude", [
+          T.union([T.stringLit("a"), T.stringLit("b"), T.stringLit("c")]),
+          T.union([T.stringLit("a"), T.stringLit("b")]),
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(T.stringLit("c"));
   });
 
   test("Extract", () => {
@@ -348,24 +358,23 @@ describe("global types", () => {
     );
   });
 
-  // TODO: uncomment when done
-  // test("Omit", () => {
-  //   expect(
-  //     evalT(
-  //       createEnvironment(`
-  //       type Todo = {
-  //         title: string;
-  //         description: string;
-  //         completed: boolean;
-  //       }
-  //       `).unwrap(),
-  //       T.typeReference("Omit", [
-  //         T.typeReference("Todo", []),
-  //         T.union([T.stringLit("title"), T.stringLit("completed")]),
-  //       ])
-  //     ).unwrap().type
-  //   ).equalsTypeNode(T.object([[T.stringLit("description"), T.string()]]));
-  // });
+  test("Omit", () => {
+    expect(
+      evalT(
+        createEnvironment(`
+        type Todo = {
+          title: string;
+          description: string;
+          completed: boolean;
+        }
+        `).unwrap(),
+        T.typeReference("Omit", [
+          T.typeReference("Todo", []),
+          T.union([T.stringLit("title"), T.stringLit("completed")]),
+        ])
+      ).unwrap().type
+    ).equalsTypeNode(T.object([[T.stringLit("description"), T.string()]]));
+  });
 });
 
 describe("mapped types", () => {

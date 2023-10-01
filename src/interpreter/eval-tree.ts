@@ -21,6 +21,7 @@ import { accessType, evalT } from "./evalT/eval-type";
 import { extendsT } from "./extendsT/extendsT";
 import { intrinsicTypes } from "./evalT/intrinsic-types";
 import { checkForDistributedUnion, distributeUnion } from "./distributed-union";
+import { sequence } from "./type-node/map-AST-to-type-nodes";
 
 export type InferMapping = { [variableName: string]: TypeNode };
 
@@ -447,11 +448,15 @@ const calculateNextStep = (
         throw new Error(`Unknown type ${tt.name}`);
       }
 
-      return match(checkForDistributedUnion(typeDeclaration, tt.typeArguments))
+      const evaledArgs = sequence(
+        tt.typeArguments.map((type) => evalT(env, type).map(({ type }) => type))
+      ).expect("Could not eval type arguments");
+
+      return match(checkForDistributedUnion(typeDeclaration, evaledArgs))
         .when(
           (indices) => indices.length > 0,
           (indices) => {
-            const updated = distributeUnion(tt.name, tt.typeArguments, indices);
+            const updated = distributeUnion(tt.name, evaledArgs, indices);
 
             return some({
               nodeToEval: targetNodeId,
