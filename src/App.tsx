@@ -1,19 +1,7 @@
-import {
-  Box,
-  Button,
-  Divider,
-  Flex,
-  Grid,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
 import GitHubButton from "react-github-btn";
 
 import { printTypeNode } from "./interpreter/type-node";
 import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
-import { Fragment } from "react";
-import { Accordion } from "@mantine/core";
 import { CodeBlock } from "./components/CodeBlock";
 import { EvalDescription } from "./components/EvalDescription";
 import { enableLegendStateReact } from "@legendapp/state/react";
@@ -24,8 +12,19 @@ import { useSelector } from "@legendapp/state/react";
 import { createEnvironment } from "./interpreter/environment";
 import { some, Do, none, Option } from "this-is-ok/option";
 import { formatCode } from "./utils/formatCode";
-import { Select } from "@mantine/core";
 import { createTypeToEval } from "./interpreter/type-node/create-type-to-eval";
+import {
+  Box,
+  Button,
+  Flex,
+  IconButton,
+  Stack,
+  Text,
+  useColorMode,
+  useColorModeValue,
+  useDisclosure,
+} from "@chakra-ui/react";
+import { MoonIcon, RepeatIcon, SunIcon } from "@chakra-ui/icons";
 
 enableReactUse();
 enableLegendStateReact();
@@ -162,44 +161,19 @@ const App = () => {
     })
   );
 
+  const { colorMode, toggleColorMode } = useColorMode();
+
   return (
-    <Box bg="rgb(9, 5, 15)">
-      <Box
-        sx={{
-          position: "fixed",
-          top: "calc(50% - 100px)",
-          bottom: "50%",
-          left: "calc(50% - 300px)",
-          right: "50%",
-          width: "400px",
-          height: "400px",
-          background: "palevioletred",
-          borderRadius: "50%",
-          filter: "blur(300px)",
-        }}
-      />
-      <Box
-        sx={{
-          position: "fixed",
-          top: "calc(30% - 100px)",
-          bottom: "50%",
-          right: "calc(20% - 300px)",
-          left: "50%",
-          width: "400px",
-          height: "400px",
-          background: "#ACFCD9",
-          borderRadius: "50%",
-          filter: "blur(300px)",
-        }}
-      />
-      <Stack
-        p={32}
-        w="100%"
-        mih={"100vh"}
-        mah={"100vh"}
-        sx={{ position: "relative" }}
-      >
-        <Flex justify="flex-end">
+    <Stack p={4}>
+      <Flex justify="flex-end" align="center" px={4}>
+        <IconButton
+          variant="ghost"
+          aria-label="toggle-color-theme"
+          icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
+          onClick={toggleColorMode}
+          mr={3}
+        />
+        <Box mt={2}>
           <GitHubButton
             href="https://github.com/softwaremill/walk-that-type"
             data-show-count="true"
@@ -207,125 +181,92 @@ const App = () => {
           >
             Star
           </GitHubButton>
-        </Flex>
-        <Grid grow gutter="lg" mah="100%">
-          <Grid.Col span={4}>
-            <Stack>
-              <Title order={3}>Examples</Title>
-              <Select
-                value={state.currentExampleName.get()}
-                onChange={(name) => {
-                  if (name) {
-                    const idx = EXAMPLES.findIndex((e) => e.name === name);
-                    state.envSource.set(EXAMPLES[idx].envSource);
-                    state.typeSource.set(EXAMPLES[idx].typeSource);
-                    state.currentExampleName.set(name);
-                  }
-                }}
-                data={EXAMPLES.map((e) => e.name)}
-              />
+        </Box>
+      </Flex>
 
-              <Title order={3}>Environment editor</Title>
-
-              <CodeEditor
-                code={envSource}
-                onCodeUpdate={(t) => {
-                  state.envSource.set(t);
-                }}
-              />
-              <Flex w="100%" justify="flex-end">
-                <Button
-                  variant="light"
-                  color="cyan"
-                  compact
-                  onClick={() => {
-                    formatCode(envSource).then((formatted) => {
-                      state.envSource.set(formatted);
-                    });
-                  }}
-                >
-                  Format
-                </Button>
-              </Flex>
-            </Stack>
-          </Grid.Col>
-
-          <Grid.Col span={6} mah="85vh">
-            <Stack mah="100%" px={6}>
-              <Stack>
-                <Title order={3}>Type to evaluate</Title>
-                <CodeEditor
-                  code={typeSource}
-                  onCodeUpdate={(t) => {
-                    state.typeSource.set(t);
-                  }}
-                />
-              </Stack>
-
-              <Divider my={"md"} />
-
-              <Stack mah="100%" sx={{ overflowY: "auto" }}>
-                {trace.isSome && renderTrace(trace.value)}
-              </Stack>
-            </Stack>
-          </Grid.Col>
-        </Grid>
-
-        <Flex
-          pos={"fixed"}
-          bottom={16}
-          w="100%"
-          justify="center"
-          align="center"
-          gap={8}
-        >
-          <Text size={14} color="gray.4">
-            Walk That Type
-          </Text>
-          <Text size={14} color="gray.4">
-            |
-          </Text>
-          <Text size={14} color="gray.4">
-            Created by{" "}
-            <Text
-              weight="bold"
-              component="a"
-              href="https://softwaremill.com/"
-              target="_blank"
-            >
-              SoftwareMill
-            </Text>
-          </Text>
-        </Flex>
-      </Stack>
-    </Box>
+      <ExamplesSelector />
+    </Stack>
   );
 };
 
-function renderTrace(trace: EvalTrace) {
-  const [initialType, ...steps] = trace;
-  return (
-    <Stack mah="100%">
-      <CodeBlock code={printTypeNode(initialType)} />
-      {steps.map((step, idx) => (
-        <Fragment key={`${step.result.nodeId}-${idx}`}>
-          <EvalDescription desc={step.evalDescription} />
-          {step.evalDescription._type === "substituteWithDefinition" && (
-            <Accordion>
-              <Accordion.Item value="expand">
-                <Accordion.Control>Step into evaluation</Accordion.Control>
-                <Accordion.Panel>
-                  {renderTrace(step.evalDescription.evalTrace)}
-                </Accordion.Panel>
-              </Accordion.Item>
-            </Accordion>
-          )}
+import { motion, isValidMotionProp } from "framer-motion";
 
-          <CodeBlock code={printTypeNode(step.result)} />
-        </Fragment>
-      ))}
-    </Stack>
+import { chakra, shouldForwardProp } from "@chakra-ui/react";
+import { Select } from "@chakra-ui/react";
+const AnimatedBox = chakra(motion.div, {
+  shouldForwardProp: (prop) =>
+    isValidMotionProp(prop) || shouldForwardProp(prop),
+});
+
+const ExamplesSelector = () => {
+  const { isOpen, onOpen, onClose } = useDisclosure({
+    defaultIsOpen: true,
+  });
+  const bgColor = useColorModeValue("gray.100", "teal.700");
+  const textColor = useColorModeValue("gray.900", "gray.100");
+
+  return (
+    <AnimatedBox
+      onMouseEnter={onOpen}
+      onMouseLeave={onClose}
+      display="flex"
+      flexDir="column"
+      position="absolute"
+      animate={{ top: isOpen ? 0 : -105 }}
+      top={0}
+      w="36vw"
+      minW="300px"
+      maxW="600px"
+      h="140px"
+      left={0}
+      right={0}
+      ml="auto"
+      mr="auto"
+      alignItems="center"
+    >
+      <Flex
+        p={8}
+        w="100%"
+        color={textColor}
+        bg={bgColor}
+        h="150px"
+        borderBottomRadius="md"
+        justify="center"
+        align="center"
+      >
+        <Flex gap={3}>
+          <Select>
+            {EXAMPLES.map((example) => (
+              <option
+                key={example.name}
+                value={example.name}
+                onClick={() => {
+                  state.envSource.set(example.envSource);
+                  state.typeSource.set(example.typeSource);
+                  state.currentExampleName.set(example.name);
+                }}
+              >
+                {example.name}
+              </option>
+            ))}
+          </Select>
+          <IconButton aria-label="reset-preset" icon={<RepeatIcon />} />
+        </Flex>
+      </Flex>
+      <Flex
+        bg={bgColor}
+        w="30%"
+        justify="center"
+        borderBottomRadius={"md"}
+        align={"flex-end"}
+        p={2}
+      >
+        <Text fontSize={13} fontWeight="semibold" color={textColor}>
+          Pick from examples ✨
+        </Text>
+      </Flex>
+    </AnimatedBox>
   );
-}
+};
 
 export default App;

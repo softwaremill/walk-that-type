@@ -12,7 +12,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chakra-ui/icons": "^2.1.1",
+    "@chakra-ui/react": "^2.8.1",
     "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
     "@legendapp/state": "^1.4.0",
     "@mantine/core": "^6.0.16",
     "@mantine/hooks": "^6.0.16",
@@ -25,6 +28,7 @@
     "@tiptap/react": "^2.0.3",
     "@tiptap/starter-kit": "^2.0.3",
     "@uiw/react-textarea-code-editor": "^2.1.7",
+    "framer-motion": "^10.16.4",
     "highlight.js": "^11.8.0",
     "lowlight": "^2.9.0",
     "prettier": "^3.0.0",
