@@ -6,6 +6,7 @@ import {
   deepEquals,
   findTypeNodeById,
   mapType,
+  printTypeNode,
   replaceNode,
   replaceTypeReference,
 } from "./type-node";
@@ -508,13 +509,18 @@ const calculateNextStep = (
 
           const fullyEvaled = evalT(newEnv, typeDeclaration.type).unwrap().type;
 
+          const ttWithEvaledArgs = {
+            ...tt,
+            typeArguments: evaledArgs,
+          };
+
           return some({
             nodeToEval: targetNodeId,
             result: replaceNode(type, targetNodeId, fullyEvaled),
             resultEnv: newEnv,
             evalDescription: {
               _type: "substituteWithDefinition",
-              name: `${tt.text()}`,
+              name: printTypeNode(ttWithEvaledArgs),
               evalTrace: getEvalTrace(updated, newEnv),
             },
           });

@@ -2,6 +2,12 @@ import { TYPE_TO_EVAL_IDENTIFIER } from "./interpreter/type-node/create-type-to-
 
 export const EXAMPLES = [
   {
+    name: "LastRecursive",
+    envSource:
+      "type Last<T extends any[]> = T extends [infer L] ? L : T extends [infer _, ...infer Rest] ? Last<Rest> : never;",
+    typeSource: `type ${TYPE_TO_EVAL_IDENTIFIER} = Last<[1, 2, 3]>;`,
+  },
+  {
     name: "Concat",
     envSource: "type Concat<A extends any[], B extends any[]> = [...A, ...B];",
     typeSource: `type ${TYPE_TO_EVAL_IDENTIFIER} = Concat<[1, 2], Concat<[3, 4], [1, 2, 3]>>;`,
@@ -63,22 +69,5 @@ export const EXAMPLES = [
     ? [...Reverse<Tail>, Head] 
     : [];`,
     typeSource: `type ${TYPE_TO_EVAL_IDENTIFIER} = Reverse<[1, 2, 3]>;`,
-  },
-  {
-    name: "EvalTrace test",
-    envSource: "type Concat<A extends any[], B extends any[]> = [...A, ...B];",
-    typeSource: `type ${TYPE_TO_EVAL_IDENTIFIER} = [Concat<[1], [2]>, Concat<[3], [4]>];`,
-  },
-  {
-    name: "LastRecursive",
-    envSource:
-      "type Last<T extends any[]> = T extends [infer L] ? L : T extends [infer _, ...infer Rest] ? Last<Rest> : never;",
-    typeSource: `type ${TYPE_TO_EVAL_IDENTIFIER} = Last<[1, 2, 3]>;`,
-  },
-  {
-    name: "LastRecursive in tuple",
-    envSource:
-      "type Last<T extends any[]> = T extends [infer L] ? L : T extends [infer _, ...infer Rest] ? Last<Rest> : never;",
-    typeSource: `type ${TYPE_TO_EVAL_IDENTIFIER} = [Last<[1, 2]>];`,
   },
 ];

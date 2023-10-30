@@ -23,7 +23,7 @@ import { ExamplesSelector } from "./components/example-selector";
 import { appState } from "./state";
 import { CodeBlock } from "./components/code-block";
 import { printTypeNode } from "./interpreter/type-node";
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { DividingLine, EvalDescription } from "./components/eval-description";
 
 enableReactUse();
@@ -139,7 +139,9 @@ const App = () => {
       </Stack>
 
       <Stack mt={8}>
-        <Text fontWeight="medium">Step 3: Walk through it!</Text>
+        <Text mb={2} fontWeight="medium">
+          Step 3: Walk through it!
+        </Text>
         {trace.isSome ? (
           <WalkThatType trace={trace.value} />
         ) : (
@@ -152,13 +154,6 @@ const App = () => {
   );
 };
 
-import {
-  Accordion,
-  AccordionItem,
-  AccordionButton,
-  AccordionPanel,
-  AccordionIcon,
-} from "@chakra-ui/react";
 import { P, match } from "ts-pattern";
 
 type WalkThatTypeProps = {
@@ -271,36 +266,5 @@ const WalkThatTypeNextStep = ({ steps }: { steps: EvalStep[] }) => {
     </>
   );
 };
-
-function renderTrace(trace: EvalTrace) {
-  const [initialType, ...steps] = trace;
-  return (
-    <Stack maxH="100%">
-      <CodeBlock code={printTypeNode(initialType)} />
-      {steps.map((step, idx) => (
-        <Fragment key={`${step.result.nodeId}-${idx}`}>
-          <EvalDescription desc={step.evalDescription} />
-          {step.evalDescription._type === "substituteWithDefinition" && (
-            <Accordion allowToggle>
-              <AccordionItem>
-                <AccordionButton>
-                  <Box as="span" flex="1" textAlign="left">
-                    Step into evaluation
-                  </Box>
-                  <AccordionIcon />
-                </AccordionButton>
-                <AccordionPanel>
-                  {renderTrace(step.evalDescription.evalTrace)}
-                </AccordionPanel>
-              </AccordionItem>
-            </Accordion>
-          )}
-
-          <CodeBlock code={printTypeNode(step.result)} />
-        </Fragment>
-      ))}
-    </Stack>
-  );
-}
 
 export default App;
