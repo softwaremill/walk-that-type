@@ -88,7 +88,7 @@ const App = () => {
           borderRadius={6}
         >
           <Editor
-            height="400px"
+            height="300px"
             width="100%"
             options={{
               minimap: { enabled: false },
@@ -118,7 +118,7 @@ const App = () => {
           borderRadius={6}
         >
           <Editor
-            height="180px"
+            height="110px"
             width="100%"
             options={{
               minimap: { enabled: false },

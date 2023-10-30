@@ -166,8 +166,8 @@ export const EvalDescription = ({
               <>
                 <Text color="gray.4" fontSize={13}>
                   <Code>{typeName}</Code>'s argument is a union type and it can
-                  be distributed, i.e. <Code>{typeName}</Code> is applied to
-                  each union member.
+                  be distributed, so <Code>{typeName}</Code> is applied to each
+                  union member.
                 </Text>
                 <Text color="gray.4" fontSize={13}>
                   Learn more about it{" "}
