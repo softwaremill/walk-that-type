@@ -112,7 +112,15 @@ export type EvalStep = {
 
 export type EvalTrace = [TypeNode, ...EvalStep[]];
 
-const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
+type ChooseNodeToEvalCtx = {
+  isInExtends?: boolean;
+};
+
+const chooseNodeToEval = (
+  env: Environment,
+  node: TypeNode,
+  ctx: ChooseNodeToEvalCtx = { isInExtends: false }
+): Option<NodeId> => {
   return match(node)
     .when(
       (t) => isLeafType(t),
@@ -137,7 +145,7 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
 
     .with({ _type: "tuple" }, (t) => {
       for (const el of t.elements) {
-        if (el._type === "rest") {
+        if (el._type === "rest" && !ctx.isInExtends) {
           if (el.type._type === "tuple") {
             return some(node.nodeId);
           }
@@ -171,7 +179,7 @@ const chooseNodeToEval = (env: Environment, node: TypeNode): Option<NodeId> => {
       }
 
       const extendsType = t.extendsType;
-      res = chooseNodeToEval(env, extendsType);
+      res = chooseNodeToEval(env, extendsType, { isInExtends: true });
       if (res.isSome) {
         return res;
       }
