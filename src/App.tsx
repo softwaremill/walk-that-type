@@ -1,6 +1,6 @@
 import GitHubButton from "react-github-btn";
 
-import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
+import { EvalStep, EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
 import { enableLegendStateReact } from "@legendapp/state/react";
 import { enableReactUse } from "@legendapp/state/config/enableReactUse";
 import { useSelector } from "@legendapp/state/react";
@@ -9,6 +9,7 @@ import { some, Do, none, Option } from "this-is-ok/option";
 import { createTypeToEval } from "./interpreter/type-node/create-type-to-eval";
 import {
   Box,
+  Button,
   Code,
   Flex,
   IconButton,
@@ -22,8 +23,8 @@ import { ExamplesSelector } from "./components/example-selector";
 import { appState } from "./state";
 import { CodeBlock } from "./components/code-block";
 import { printTypeNode } from "./interpreter/type-node";
-import { Fragment } from "react";
-import { EvalDescription } from "./components/eval-description";
+import { Fragment, useEffect, useState } from "react";
+import { DividingLine, EvalDescription } from "./components/eval-description";
 
 enableReactUse();
 enableLegendStateReact();
@@ -53,7 +54,7 @@ const App = () => {
       <Flex justify="space-between" align="center">
         <Flex gap={1} align="center">
           <Text fontSize={18} as="span" fontWeight="regular">
-            Softwaremill{" "}
+            Softwaremill
           </Text>
           /
           <Text as="span" fontSize={18} fontWeight="semibold">
@@ -139,7 +140,13 @@ const App = () => {
 
       <Stack mt={8}>
         <Text fontWeight="medium">Step 3: Walk through it!</Text>
-        <Stack>{trace.isSome && renderTrace(trace.value)}</Stack>
+        {trace.isSome ? (
+          <WalkThatType trace={trace.value} />
+        ) : (
+          <Stack>
+            Assign some type to _wtt in Step 2 to see the evaluation!
+          </Stack>
+        )}
       </Stack>
     </Stack>
   );
@@ -152,6 +159,118 @@ import {
   AccordionPanel,
   AccordionIcon,
 } from "@chakra-ui/react";
+import { P, match } from "ts-pattern";
+
+type WalkThatTypeProps = {
+  trace: EvalTrace;
+};
+
+const WalkThatType = ({ trace }: WalkThatTypeProps) => {
+  const [initialType, ...steps] = trace;
+
+  return (
+    <Stack>
+      <CodeBlock code={printTypeNode(initialType)} />
+      <WalkThatTypeNextStep steps={steps} />
+    </Stack>
+  );
+};
+
+const WalkThatTypeNextStep = ({ steps }: { steps: EvalStep[] }) => {
+  const [currentStep, ...nextSteps] = steps;
+  const [state, setState] = useState<"choice" | "step-over" | "step-into">(
+    "choice"
+  );
+
+  useEffect(() => {
+    setState("choice");
+  }, [steps]);
+
+  if (steps.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <Stack>
+        <EvalDescription
+          desc={currentStep.evalDescription}
+          {...(state === "step-over"
+            ? { expandable: true, onExpand: () => setState("step-into") }
+            : { expandable: false })}
+        />
+      </Stack>
+      {match([currentStep.evalDescription, state])
+        .with([{ _type: "substituteWithDefinition" }, "choice"], () => (
+          <Flex gap={6} justify="center">
+            <Button
+              onClick={() => setState("step-over")}
+              colorScheme="blue"
+              variant="outline"
+            >
+              Step over
+            </Button>
+
+            <Button onClick={() => setState("step-into")} colorScheme="teal">
+              Step into
+            </Button>
+          </Flex>
+        ))
+        .with([{ _type: "substituteWithDefinition" }, "step-over"], () => (
+          <>
+            <CodeBlock code={printTypeNode(currentStep.result)} />
+            <WalkThatTypeNextStep steps={nextSteps} />
+          </>
+        ))
+        .with(
+          [
+            P.shape({ _type: "substituteWithDefinition" }).select(),
+            "step-into",
+          ],
+          (evalDescription) => (
+            <>
+              <Stack
+                p={6}
+                pb={12}
+                borderStyle="solid"
+                borderWidth={2}
+                borderColor="gray.300"
+                borderRadius={6}
+                position="relative"
+              >
+                <Text fontSize={12} color="gray.500" mb={2}>
+                  Evaluating: <Code fontSize={12}>{evalDescription.name}</Code>
+                </Text>
+                <Button
+                  size={"sm"}
+                  position={"absolute"}
+                  bottom={2}
+                  right={2}
+                  variant="ghost"
+                  colorScheme="teal"
+                  onClick={() => setState("step-over")}
+                >
+                  Collapse
+                </Button>
+                <WalkThatType trace={evalDescription.evalTrace} />
+              </Stack>
+              <Flex w="full" justify="center">
+                <DividingLine />
+              </Flex>
+              <CodeBlock code={printTypeNode(currentStep.result)} />
+              <WalkThatTypeNextStep steps={nextSteps} />
+            </>
+          )
+        )
+        .otherwise(() => (
+          <>
+            <CodeBlock code={printTypeNode(currentStep.result)} />
+            <WalkThatTypeNextStep steps={nextSteps} />
+          </>
+        ))}
+    </>
+  );
+};
 
 function renderTrace(trace: EvalTrace) {
   const [initialType, ...steps] = trace;
