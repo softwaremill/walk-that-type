@@ -1,8 +1,8 @@
 import { Accordion, Stack } from "@mantine/core";
 import { EvalTrace } from "../interpreter/eval-tree";
-import { CodeBlock } from "./CodeBlock";
+import { CodeBlock } from "./code-block";
 import { Fragment } from "react";
-import { EvalDescription } from "./EvalDescription";
+import { EvalDescription } from "./eval-description";
 import { printTypeNode } from "../interpreter/type-node";
 
 export function renderTrace(trace: EvalTrace) {

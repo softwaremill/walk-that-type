@@ -4,7 +4,7 @@ import { formatCode } from "../utils/formatCode";
 
 const theme: PrismTheme = {
   plain: {
-    backgroundColor: "rgba(8, 2, 2, 0.38)",
+    backgroundColor: "rgba(8, 2, 2, 0.87)",
     color: "#e4f0fb",
   },
   styles: [
