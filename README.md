@@ -86,6 +86,6 @@ To add a missing built-in type (e.g. `Pick`) you just need to implement it in th
 - [x] UI revamp
 - [ ] Better examples
 - [x] step through controls instead of showing all at once
-- [ ] report a bug button (link to gh issue template)
+- [x] report a bug button (link to gh issue template)
 - [ ] landing page / how to use section
 - [ ] toasts informing of errors instead of console logging

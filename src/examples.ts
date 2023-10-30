@@ -3,8 +3,10 @@ import { TYPE_TO_EVAL_IDENTIFIER } from "./interpreter/type-node/create-type-to-
 export const EXAMPLES = [
   {
     name: "LastRecursive",
-    envSource:
-      "type Last<T extends any[]> = T extends [infer L] ? L : T extends [infer _, ...infer Rest] ? Last<Rest> : never;",
+    envSource: `type Last<T extends any[]> 
+  = T extends [infer L] 
+    ? L 
+    : T extends [infer _, ...infer Rest] ? Last<Rest> : never;`,
     typeSource: `type ${TYPE_TO_EVAL_IDENTIFIER} = Last<[1, 2, 3]>;`,
   },
   {

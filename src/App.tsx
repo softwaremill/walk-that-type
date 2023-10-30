@@ -53,17 +53,35 @@ const App = () => {
       <ExamplesSelector />
       <Flex justify="space-between" align="center">
         <Flex gap={1} align="center">
-          <Text fontSize={18} as="span" fontWeight="regular">
-            Softwaremill
+          <Text
+            color={colorMode === "dark" ? "gray.200" : "gray.600"}
+            fontSize={18}
+            as="span"
+            fontWeight="regular"
+          >
+            Softwaremill /
           </Text>
-          /
-          <Text as="span" fontSize={18} fontWeight="semibold">
+          <Text
+            color={colorMode === "dark" ? "gray.100" : "gray.600"}
+            as="span"
+            fontSize={18}
+            fontWeight="semibold"
+          >
             Walk That Type
           </Text>
         </Flex>
         <Flex align="center">
+          <Button
+            variant="ghost"
+            as="a"
+            target="_blank"
+            href="https://github.com/softwaremill/walk-that-type/issues/new?projects=&template=bug_report.md&title="
+          >
+            Report a bug
+          </Button>
           <IconButton
             variant="ghost"
+            colorScheme="gray"
             aria-label="toggle-color-theme"
             icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
             onClick={toggleColorMode}
@@ -87,6 +105,7 @@ const App = () => {
           py={4}
           bg={colorMode === "light" ? "white" : "#1E1E1E"}
           borderRadius={6}
+          shadow="md"
         >
           <Editor
             height="300px"
@@ -95,6 +114,7 @@ const App = () => {
               minimap: { enabled: false },
               overviewRulerBorder: false,
               overviewRulerLanes: 0,
+              renderLineHighlight: "none",
             }}
             theme={colorMode === "light" ? "vs" : "vs-dark"}
             defaultLanguage="typescript"
@@ -117,6 +137,7 @@ const App = () => {
           py={4}
           bg={colorMode === "light" ? "white" : "#1E1E1E"}
           borderRadius={6}
+          shadow="md"
         >
           <Editor
             height="110px"
@@ -125,6 +146,7 @@ const App = () => {
               minimap: { enabled: false },
               overviewRulerBorder: false,
               overviewRulerLanes: 0,
+              renderLineHighlight: "none",
             }}
             theme={colorMode === "light" ? "vs" : "vs-dark"}
             defaultLanguage="typescript"
