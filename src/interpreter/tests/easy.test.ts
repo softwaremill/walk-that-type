@@ -2,7 +2,10 @@ import { expect, test } from "vitest";
 import { createEnvironment } from "../environment";
 import { evalT } from "../evalT/eval-type";
 import { T, deepEquals } from "../type-node";
-import { createTypeToEval } from "../type-node/create-type-to-eval";
+import {
+  TYPE_TO_EVAL_IDENTIFIER,
+  createTypeToEval,
+} from "../type-node/create-type-to-eval";
 
 test("First", () => {
   const env = createEnvironment(
@@ -11,19 +14,32 @@ test("First", () => {
 
   expect(
     deepEquals(
-      evalT(env, createTypeToEval(`First<[1, 2, 3]>`).unwrap()).unwrap().type,
+      evalT(
+        env,
+        createTypeToEval(
+          `type ${TYPE_TO_EVAL_IDENTIFIER} = First<[1, 2, 3]>`
+        ).unwrap()
+      ).unwrap().type,
       T.numberLit(1)
     )
   ).toBe(true);
   expect(
     deepEquals(
-      evalT(env, createTypeToEval(`First<[42]>`).unwrap()).unwrap().type,
+      evalT(
+        env,
+        createTypeToEval(
+          `type ${TYPE_TO_EVAL_IDENTIFIER} = First<[42]>`
+        ).unwrap()
+      ).unwrap().type,
       T.numberLit(42)
     )
   ).toBe(true);
   expect(
     deepEquals(
-      evalT(env, createTypeToEval(`First<[]>`).unwrap()).unwrap().type,
+      evalT(
+        env,
+        createTypeToEval(`type ${TYPE_TO_EVAL_IDENTIFIER} = First<[]>`).unwrap()
+      ).unwrap().type,
       T.never()
     )
   ).toBe(true);
@@ -36,19 +52,32 @@ test("Last", () => {
 
   expect(
     deepEquals(
-      evalT(env, createTypeToEval(`Last<[1, 2, 3]>`).unwrap()).unwrap().type,
+      evalT(
+        env,
+        createTypeToEval(
+          `type ${TYPE_TO_EVAL_IDENTIFIER} = Last<[1, 2, 3]>`
+        ).unwrap()
+      ).unwrap().type,
       T.numberLit(3)
     )
   ).toBe(true);
   expect(
     deepEquals(
-      evalT(env, createTypeToEval(`Last<[42]>`).unwrap()).unwrap().type,
+      evalT(
+        env,
+        createTypeToEval(
+          `type ${TYPE_TO_EVAL_IDENTIFIER} = Last<[42]>`
+        ).unwrap()
+      ).unwrap().type,
       T.numberLit(42)
     )
   ).toBe(true);
   expect(
     deepEquals(
-      evalT(env, createTypeToEval(`Last<[]>`).unwrap()).unwrap().type,
+      evalT(
+        env,
+        createTypeToEval(`type ${TYPE_TO_EVAL_IDENTIFIER} = Last<[]>`).unwrap()
+      ).unwrap().type,
       T.never()
     )
   ).toBe(true);
@@ -61,20 +90,34 @@ test("Concat", () => {
 
   expect(
     deepEquals(
-      evalT(env, createTypeToEval(`Concat<[], []>`).unwrap()).unwrap().type,
+      evalT(
+        env,
+        createTypeToEval(
+          `type ${TYPE_TO_EVAL_IDENTIFIER} = Concat<[], []>`
+        ).unwrap()
+      ).unwrap().type,
       T.tuple([])
     )
   ).toBe(true);
   expect(
     deepEquals(
-      evalT(env, createTypeToEval(`Concat<[], [1]>`).unwrap()).unwrap().type,
+      evalT(
+        env,
+        createTypeToEval(
+          `type ${TYPE_TO_EVAL_IDENTIFIER} = Concat<[], [1]>`
+        ).unwrap()
+      ).unwrap().type,
       T.tuple([T.numberLit(1)])
     )
   ).toBe(true);
   expect(
     deepEquals(
-      evalT(env, createTypeToEval(`Concat<[1, 2], [3, 4]>`).unwrap()).unwrap()
-        .type,
+      evalT(
+        env,
+        createTypeToEval(
+          `type ${TYPE_TO_EVAL_IDENTIFIER} = Concat<[1, 2], [3, 4]>`
+        ).unwrap()
+      ).unwrap().type,
       T.tuple([T.numberLit(1), T.numberLit(2), T.numberLit(3), T.numberLit(4)])
     )
   ).toBe(true);
@@ -83,7 +126,7 @@ test("Concat", () => {
       evalT(
         env,
         createTypeToEval(
-          `Concat<["1", 2, "3"], [false, boolean, "4"]>`
+          `type ${TYPE_TO_EVAL_IDENTIFIER} = Concat<["1", 2, "3"], [false, boolean, "4"]>`
         ).unwrap()
       ).unwrap().type,
       T.tuple([
