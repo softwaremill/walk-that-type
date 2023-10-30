@@ -3,12 +3,14 @@ import { TypeNode } from ".";
 import ts from "typescript";
 import { mapASTToTypeNodes } from "./map-AST-to-type-nodes";
 
+export const TYPE_TO_EVAL_IDENTIFIER = "_wtt";
+
 export const createTypeToEval = (
   sourceCode: string
 ): Result<TypeNode, Error> => {
   const sourceFile = ts.createSourceFile(
     "b.ts",
-    `type __dummy = ${sourceCode}`,
+    `${sourceCode}`,
     ts.ScriptTarget.Latest,
     /*setParentNodes */ true
   );
@@ -17,7 +19,9 @@ export const createTypeToEval = (
 
   sourceFile.forEachChild((child) => {
     if (ts.isTypeAliasDeclaration(child)) {
-      node = mapASTToTypeNodes(child.type);
+      if (child.name.getText() === TYPE_TO_EVAL_IDENTIFIER) {
+        node = mapASTToTypeNodes(child.type);
+      }
     }
   });
 

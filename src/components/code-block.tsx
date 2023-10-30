@@ -4,14 +4,14 @@ import { formatCode } from "../utils/formatCode";
 
 const theme: PrismTheme = {
   plain: {
-    backgroundColor: "#faf8f5",
-    color: "#728fcb",
+    backgroundColor: "rgba(8, 2, 2, 0.87)",
+    color: "#e4f0fb",
   },
   styles: [
     {
       types: ["comment", "prolog", "doctype", "cdata", "punctuation"],
       style: {
-        color: "#b6ad9a",
+        color: "#767c9d",
       },
     },
     {
@@ -23,13 +23,13 @@ const theme: PrismTheme = {
     {
       types: ["tag", "operator", "number"],
       style: {
-        color: "#063289",
+        color: "#5DE4c7",
       },
     },
     {
       types: ["property", "function"],
       style: {
-        color: "#b29762",
+        color: "#e4f0fb",
       },
     },
     {
@@ -60,7 +60,7 @@ const theme: PrismTheme = {
         "atrule",
       ],
       style: {
-        color: "#728fcb",
+        color: "palevioletred",
       },
     },
     {
@@ -124,7 +124,7 @@ export const CodeBlock = ({ code }: { code: string }) => {
       noCopy
       radius={"md"}
       sx={{ boxShadow: "0px 6px 12px -6px rgba(0, 0, 0, 0.1)" }}
-      styles={{ code: { fontSize: 14 } }}
+      styles={{ code: { fontSize: 14, fontFamily: "'Fira Code', monospace" } }}
       getPrismTheme={() => theme}
     >
       {formattedCode}

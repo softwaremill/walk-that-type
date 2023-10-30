@@ -54,7 +54,7 @@ Feel free to report any issues or feature requests using Github issues.
   - [ ] Record
   - [ ] Awaited, Promise, PromiseLike
   - [ ] Parameters, ReturnType (needs function types)
-- [] extends
+- [ ] extends
   - [x] any, unknown, never
   - [x] common sets such as number, string
   - [x] literal types
@@ -82,10 +82,10 @@ To add a missing built-in type (e.g. `Pick`) you just need to implement it in th
 
 ## Other todos:
 
-- [ ] landing page / how to use section
+- [x] star on github widget
+- [x] UI revamp
 - [ ] Better examples
-- [ ] report a bug button (link to gh issue template)
-- [ ] star on github widget
-- [ ] UI revamp
 - [ ] step through controls instead of showing all at once
+- [ ] report a bug button (link to gh issue template)
+- [ ] landing page / how to use section
 - [ ] toasts informing of errors instead of console logging
