@@ -20,11 +20,22 @@ import {
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import Editor from "@monaco-editor/react";
 import { ExamplesSelector } from "./components/example-selector";
-import { appState } from "./state";
+import { AppState } from "./state";
 import { CodeBlock } from "./components/code-block";
 import { printTypeNode } from "./interpreter/type-node";
 import { useEffect, useState } from "react";
 import { DividingLine, EvalDescription } from "./components/eval-description";
+import debounce from "lodash.debounce";
+
+const debouncedPersistStateInUrl = debounce(persistStateInUrl, 500);
+
+const initState = getStateFromUrl().unwrapOr({
+  envSource: EXAMPLES[0].envSource,
+  typeSource: EXAMPLES[0].typeSource,
+  currentExampleName: EXAMPLES[0].name,
+});
+
+export const appState = observable<AppState>(initState);
 
 enableReactUse();
 enableLegendStateReact();
@@ -45,6 +56,10 @@ const App = () => {
       }
     })
   );
+
+  appState.onChange(({ value }) => {
+    debouncedPersistStateInUrl(value);
+  });
 
   const { colorMode, toggleColorMode } = useColorMode();
 
@@ -177,6 +192,9 @@ const App = () => {
 };
 
 import { P, match } from "ts-pattern";
+import { getStateFromUrl, persistStateInUrl } from "./utils/compression";
+import { observable } from "@legendapp/state";
+import { EXAMPLES } from "./examples";
 
 type WalkThatTypeProps = {
   trace: EvalTrace;
