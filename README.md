@@ -33,12 +33,12 @@ Feel free to report any issues or feature requests using Github issues.
 - [x] distributed union
 - [x] indexed access types
 - [x] keyof
+- [ ] template string literals
 - [ ] intersection types
 - [ ] function types
 - [ ] type variance
 - [ ] readonly
 - [ ] optional properties
-- [ ] template string literals
 - [ ] built-in types
   - [x] Uppercase
   - [x] Lowercase
@@ -63,7 +63,6 @@ Feel free to report any issues or feature requests using Github issues.
   - [ ] intersection types
   - [ ] function types
 - [x] conditional types
-- [ ] Make sure easy type challenges can be used with this app
 
 # Implementing new features:
 
@@ -87,5 +86,6 @@ To add a missing built-in type (e.g. `Pick`) you just need to implement it in th
 - [x] Better examples
 - [x] step through controls instead of showing all at once
 - [x] report a bug button (link to gh issue template)
-- [ ] landing page / how to use section
 - [ ] toasts informing of errors instead of console logging
+- [ ] fix how objects are displayed
+- [ ] landing page / how to use section
