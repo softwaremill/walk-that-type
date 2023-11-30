@@ -31,10 +31,11 @@ export const LandingPage = () => {
             fontSize={18}
             color={colorMode === "light" ? "gray.600" : "gray.300"}
           >
-            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Minima,
-            nostrum dolores veritatis odio illum aliquid consequuntur hic harum
-            deserunt at perspiciatis quasi eum sequi excepturi explicabo quis
-            cupiditate neque vel!
+            Did you ever wish you could add a `console.log` somewhere inside
+            your complex type to see what's going on? Now you can! First define
+            or paste your type definition into the editor. Then add some type
+            you want to "walk". Finally, step through the type to see how
+            TypeScript interpreter evaluates it.
           </Text>
 
           <Flex gap={4} mt={2}>
