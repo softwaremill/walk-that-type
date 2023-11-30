@@ -21,7 +21,8 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
       )
     );
   } else if (ts.isConditionalTypeNode(node)) {
-    return mapASTToTypeNodes(node.checkType).do((checkType) => {
+    return Do(() => {
+      const checkType = mapASTToTypeNodes(node.checkType).bind();
       return ok(
         T.conditionalType(
           checkType,
@@ -129,7 +130,6 @@ export const mapASTToTypeNodes = (node: ts.Node): Result<TypeNode, Error> => {
       T.keyof(mapASTToTypeNodes(node.type).expect("couldn't parse type"))
     );
   } else {
-    console.error(node, `Unsupported type ${ts.SyntaxKind[node.kind]}`);
     return err(new Error(`Unsupported type ${ts.SyntaxKind[node.kind]}`));
   }
 };

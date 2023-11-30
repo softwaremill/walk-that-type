@@ -1,4 +1,4 @@
-import { Result, err, ok } from "this-is-ok/result";
+import { Do, Result, ok } from "this-is-ok/result";
 import ts from "typescript";
 import { mapASTToTypeNodes } from "./type-node/map-AST-to-type-nodes";
 import { T, TypeNode } from "./type-node";
@@ -14,31 +14,28 @@ export type Environment = {
 
 export const createEnvironment = (
   sourceCode: string
-): Result<Environment, Error> => {
-  const sourceFile = ts.createSourceFile(
-    "a.ts",
-    sourceCode,
-    ts.ScriptTarget.Latest,
-    /*setParentNodes */ true
-  );
+): Result<Environment, Error> =>
+  Do(() => {
+    const sourceFile = ts.createSourceFile(
+      "a.ts",
+      sourceCode,
+      ts.ScriptTarget.Latest,
+      /*setParentNodes */ true
+    );
 
-  const env: Environment = {};
-  try {
+    const env: Environment = {};
     sourceFile.forEachChild((node) => {
       if (ts.isTypeAliasDeclaration(node)) {
         env[node.name.getText()] = mapASTToTypeNodes(
           node
-        ).unwrap() as TypeDeclaration;
+        ).bind() as TypeDeclaration;
       }
     });
-  } catch (e) {
-    return err(e as Error);
-  }
 
-  const envWithGlobalTypes = extendEnvironment(env, globalTypes);
+    const envWithGlobalTypes = extendEnvironment(env, globalTypes);
 
-  return ok(envWithGlobalTypes);
-};
+    return ok(envWithGlobalTypes);
+  });
 
 export const addToEnvironment = (
   env: Environment,
@@ -50,7 +47,10 @@ export const addToEnvironment = (
   return env;
 };
 
-export const extendEnvironment = (env: Environment, newEnv: Environment) => ({
+export const extendEnvironment = (
+  env: Environment,
+  newEnv: Environment
+): Environment => ({
   ...env,
   ...newEnv,
 });

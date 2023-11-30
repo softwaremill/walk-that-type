@@ -252,7 +252,7 @@ export const evalT = (
     )
 
     .otherwise(() => {
-      console.error("unhandled type", type);
+      console.error("unhandled type in `evalT`", type);
       return err(new Error("unhandled type in evalT"));
     });
 

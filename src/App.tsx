@@ -1,11 +1,10 @@
 import GitHubButton from "react-github-btn";
 
-import { EvalStep, EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
+import { EvalTrace, getEvalTrace } from "./interpreter/eval-tree";
 import { enableLegendStateReact } from "@legendapp/state/react";
 import { enableReactUse } from "@legendapp/state/config/enableReactUse";
 import { useSelector } from "@legendapp/state/react";
 import { createEnvironment } from "./interpreter/environment";
-import { some, Do, none, Option } from "this-is-ok/option";
 import { createTypeToEval } from "./interpreter/type-node/create-type-to-eval";
 import {
   Box,
@@ -21,11 +20,13 @@ import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import Editor from "@monaco-editor/react";
 import { ExamplesSelector } from "./components/example-selector";
 import { AppState } from "./state";
-import { CodeBlock } from "./components/code-block";
-import { printTypeNode } from "./interpreter/type-node";
-import { useEffect, useState } from "react";
-import { DividingLine, EvalDescription } from "./components/eval-description";
 import debounce from "lodash.debounce";
+import { Result, Do, fromThrowable } from "this-is-ok/result";
+import { WalkThatType } from "./components/walk-that-type";
+import { getStateFromUrl, persistStateInUrl } from "./utils/compression";
+import { EXAMPLES } from "./examples";
+import { observable } from "@legendapp/state";
+import { ErrorMessage } from "./components/error-message";
 
 const debouncedPersistStateInUrl = debounce(persistStateInUrl, 500);
 
@@ -43,17 +44,23 @@ enableLegendStateReact();
 const App = () => {
   const envSource = appState.envSource.use();
   const typeSource = appState.typeSource.use();
-  const trace = useSelector<Option<EvalTrace>>(() =>
+  const trace = useSelector<Result<EvalTrace, string>>(() =>
     Do(() => {
-      const env = createEnvironment(envSource).bind();
-      const typeToEval = createTypeToEval(typeSource).bind();
-      try {
-        const trace = getEvalTrace(typeToEval, env);
-        return some(trace);
-      } catch (e) {
-        console.error(e);
-        return none;
-      }
+      const env = createEnvironment(envSource)
+        .mapErr(
+          (e) => `Error in while creating environment (Step 1): ${e.message}`
+        )
+        .bind();
+      const typeToEval = createTypeToEval(typeSource)
+        .mapErr(
+          (e) =>
+            `Error in while creating type to evaluate (Step 2): ${e.message}`
+        )
+        .bind();
+      const trace = fromThrowable(() => getEvalTrace(typeToEval, env)).mapErr(
+        (e) => `Error while creating evaluation steps: ${e.message}`
+      );
+      return trace;
     })
   );
 
@@ -179,131 +186,13 @@ const App = () => {
         <Text mb={2} fontWeight="medium">
           Step 3: Walk through it!
         </Text>
-        {trace.isSome ? (
+        {trace.isOk ? (
           <WalkThatType trace={trace.value} />
         ) : (
-          <Stack>
-            Assign some type to _wtt in Step 2 to see the evaluation!
-          </Stack>
+          <ErrorMessage error={trace.error} />
         )}
       </Stack>
     </Stack>
-  );
-};
-
-import { P, match } from "ts-pattern";
-import { getStateFromUrl, persistStateInUrl } from "./utils/compression";
-import { observable } from "@legendapp/state";
-import { EXAMPLES } from "./examples";
-
-type WalkThatTypeProps = {
-  trace: EvalTrace;
-};
-
-const WalkThatType = ({ trace }: WalkThatTypeProps) => {
-  const [initialType, ...steps] = trace;
-
-  return (
-    <Stack>
-      <CodeBlock code={printTypeNode(initialType)} />
-      <WalkThatTypeNextStep steps={steps} />
-    </Stack>
-  );
-};
-
-const WalkThatTypeNextStep = ({ steps }: { steps: EvalStep[] }) => {
-  const [currentStep, ...nextSteps] = steps;
-  const [state, setState] = useState<"choice" | "step-over" | "step-into">(
-    "choice"
-  );
-
-  useEffect(() => {
-    setState("choice");
-  }, [steps]);
-
-  if (steps.length === 0) {
-    return null;
-  }
-
-  return (
-    <>
-      <Stack>
-        <EvalDescription
-          desc={currentStep.evalDescription}
-          {...(state === "step-over"
-            ? { expandable: true, onExpand: () => setState("step-into") }
-            : { expandable: false })}
-        />
-      </Stack>
-      {match([currentStep.evalDescription, state])
-        .with([{ _type: "substituteWithDefinition" }, "choice"], () => (
-          <Flex gap={6} justify="center">
-            <Button
-              onClick={() => setState("step-over")}
-              colorScheme="blue"
-              variant="outline"
-            >
-              Step over
-            </Button>
-
-            <Button onClick={() => setState("step-into")} colorScheme="teal">
-              Step into
-            </Button>
-          </Flex>
-        ))
-        .with([{ _type: "substituteWithDefinition" }, "step-over"], () => (
-          <>
-            <CodeBlock code={printTypeNode(currentStep.result)} />
-            <WalkThatTypeNextStep steps={nextSteps} />
-          </>
-        ))
-        .with(
-          [
-            P.shape({ _type: "substituteWithDefinition" }).select(),
-            "step-into",
-          ],
-          (evalDescription) => (
-            <>
-              <Stack
-                p={6}
-                pb={12}
-                borderStyle="solid"
-                borderWidth={2}
-                borderColor="gray.300"
-                borderRadius={6}
-                position="relative"
-              >
-                <Text fontSize={12} color="gray.500" mb={2}>
-                  Evaluating: <Code fontSize={12}>{evalDescription.name}</Code>
-                </Text>
-                <Button
-                  size={"sm"}
-                  position={"absolute"}
-                  bottom={2}
-                  right={2}
-                  variant="ghost"
-                  colorScheme="teal"
-                  onClick={() => setState("step-over")}
-                >
-                  Collapse
-                </Button>
-                <WalkThatType trace={evalDescription.evalTrace} />
-              </Stack>
-              <Flex w="full" justify="center">
-                <DividingLine />
-              </Flex>
-              <CodeBlock code={printTypeNode(currentStep.result)} />
-              <WalkThatTypeNextStep steps={nextSteps} />
-            </>
-          )
-        )
-        .otherwise(() => (
-          <>
-            <CodeBlock code={printTypeNode(currentStep.result)} />
-            <WalkThatTypeNextStep steps={nextSteps} />
-          </>
-        ))}
-    </>
   );
 };
 

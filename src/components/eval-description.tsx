@@ -141,7 +141,7 @@ export const EvalDescription = ({
                     inferred types:
                   </Text>
                   {Object.entries(inferredTypes).map(([k, v]) => (
-                    <Text>
+                    <Text key={k}>
                       <Code sx={{ color: "black" }} mr={6}>
                         {k}
                       </Code>{" "}

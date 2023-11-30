@@ -127,6 +127,7 @@ const chooseNodeToEval = (
       (t) => isLeafType(t),
       () => none
     )
+    .with({ _type: "rest" }, () => none)
     .with({ _type: "array" }, (t) => chooseNodeToEval(env, t.elementType))
     .with({ _type: "object" }, (t) => {
       for (const [k, v] of t.properties) {
@@ -237,8 +238,9 @@ const chooseNodeToEval = (
       return some(t.nodeId);
     })
     .otherwise(() => {
-      console.warn("???", node);
-      return none;
+      throw new Error(
+        `Unhandled node type in 'chooseNodeToEval': ${JSON.stringify(node)}`
+      );
     });
 };
 
@@ -342,26 +344,21 @@ const calculateNextStep = (
     })
 
     .with({ _type: "keyof" }, (t) => {
-      return Do(() => {
-        // we expect the inner type to be already evaluated
-        const innerType = t.type;
-        if (innerType._type !== "object") {
-          console.error("keyof can only be applied to object types");
-          return none;
-        }
+      // we expect the inner type to be already evaluated
+      const innerType = t.type;
+      if (innerType._type !== "object") {
+        throw new Error("`keyof` can only be applied to object types");
+      }
 
-        const updated = T.union(
-          innerType.properties.map(([k]) => k)
-        ) as TypeNode;
+      const updated = T.union(innerType.properties.map(([k]) => k)) as TypeNode;
 
-        return some({
-          nodeToEval: targetNodeId,
-          result: replaceNode(type, targetNodeId, updated),
-          resultEnv: env,
-          evalDescription: {
-            _type: "keyof",
-          },
-        });
+      return some({
+        nodeToEval: targetNodeId,
+        result: replaceNode(type, targetNodeId, updated),
+        resultEnv: env,
+        evalDescription: {
+          _type: "keyof",
+        },
       });
     })
 
@@ -559,8 +556,7 @@ const calculateNextStep = (
     })
 
     .otherwise(() => {
-      console.error(`unimplemented: ${nodeToEval._type}`);
-      return none;
+      throw new Error(`unimplemented: ${nodeToEval._type}`);
     });
 };
 
