@@ -12,7 +12,7 @@ import {
 import { Select } from "@chakra-ui/react";
 import { RepeatIcon } from "@chakra-ui/icons";
 import { EXAMPLES } from "../examples";
-import { appState } from "../App";
+import { appState } from "../pages/App";
 
 const AnimatedBox = chakra(motion.div, {
   shouldForwardProp: (prop) =>

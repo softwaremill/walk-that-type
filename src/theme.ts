@@ -12,6 +12,7 @@ const theme = extendTheme({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     global: (props: any) => ({
       "html, body": {
+        fontFamily: "'Inter', sans-serif",
         backgroundColor:
           props.colorMode === "dark" ? "gray.700" : "hsl(210, 20%, 99%)",
       },
