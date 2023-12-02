@@ -35,9 +35,6 @@ dependencies:
   '@monaco-editor/react':
     specifier: ^4.5.2
     version: 4.5.2(monaco-editor@0.43.0)(react-dom@18.2.0)(react@18.2.0)
-  '@tabler/icons-react':
-    specifier: ^2.24.0
-    version: 2.24.0(react@18.2.0)
   '@tiptap/extension-code-block-lowlight':
     specifier: ^2.0.3
     version: 2.0.3(@tiptap/core@2.1.11)(@tiptap/extension-code-block@2.1.11)(@tiptap/pm@2.0.3)
@@ -86,6 +83,9 @@ dependencies:
   react-github-btn:
     specifier: ^1.4.0
     version: 1.4.0(react@18.2.0)
+  react-icons:
+    specifier: ^4.12.0
+    version: 4.12.0(react@18.2.0)
   react-router-dom:
     specifier: ^6.18.0
     version: 6.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -4617,6 +4617,14 @@ packages:
       react: '>=16.3.0'
     dependencies:
       github-buttons: 2.27.0
+      react: 18.2.0
+    dev: false
+
+  /react-icons@4.12.0(react@18.2.0):
+    resolution: {integrity: sha512-IBaDuHiShdZqmfc/TwHu6+d6k2ltNCf3AszxNmjJc1KUfXdEeRJOKyNvLmAHaarhzGmTSVygNdyu8/opXv2gaw==}
+    peerDependencies:
+      react: '*'
+    dependencies:
       react: 18.2.0
     dev: false
 

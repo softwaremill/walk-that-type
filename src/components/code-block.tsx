@@ -125,8 +125,8 @@ export const CodeBlock = ({ code }: { code: string }) => {
       radius={"md"}
       sx={{
         boxShadow: "0px 6px 12px -6px rgba(0, 0, 0, 0.1)",
-        maxWidth: "800px",
-        width: "100%",
+        maxWidth: "100%",
+        width: "800px",
       }}
       styles={{ code: { fontSize: 14, fontFamily: "'Fira Code', monospace" } }}
       getPrismTheme={() => theme}

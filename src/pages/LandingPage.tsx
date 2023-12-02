@@ -9,6 +9,7 @@ import {
   useColorMode,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
+import { FaGithub } from "react-icons/fa";
 
 export const LandingPage = () => {
   const { colorMode } = useColorMode();
@@ -31,11 +32,16 @@ export const LandingPage = () => {
             fontSize={18}
             color={colorMode === "light" ? "gray.600" : "gray.300"}
           >
-            Did you ever wish you could add a `console.log` somewhere inside
-            your complex type to see what's going on? Now you can! First define
-            or paste your type definition into the editor. Then add some type
-            you want to "walk". Finally, step through the type to see how
-            TypeScript interpreter evaluates it.
+            Debugging complex TypeScript types is painful, because you can't
+            simply put log statements in them and the obscure syntax doesn't
+            help.
+            <br />
+            Introducing{" "}
+            <Text as="span" fontWeight="medium">
+              Walk That Type
+            </Text>
+            : a tool that lets you paste or write any type, then step through it
+            while explaining what happens at each step!
           </Text>
 
           <Flex gap={4} mt={2}>
@@ -46,8 +52,9 @@ export const LandingPage = () => {
               to="https://github.com/softwaremill/walk-that-type"
               as={Link}
               size="lg"
+              leftIcon={<FaGithub />}
             >
-              See on GitHub
+              GitHub
             </Button>
           </Flex>
         </Stack>

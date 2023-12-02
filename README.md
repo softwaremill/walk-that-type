@@ -2,7 +2,9 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/a9f2c2f3-0a4c-4429-949f-beb6225c7171/deploy-status)](https://app.netlify.com/sites/walk-that-type/deploys)
 
-> 🚧 Warning: this project is still in early development stage. It might include bugs and missing features (see [TODOs](#todos) section).
+Debugging complex TypeScript types is painful, because you can't simply put log statements in them and the obscure syntax doesn't help. Introducing Walk That Type: a tool that lets you paste or write any type, then step through it while explaining what happens at each step!
+
+> 🚧 Warning: this project is still in early development stage. It might include bugs and missing features (see [ROADMAP](https://github.com/softwaremill/walk-that-type/issues/6) to see what's still coming).
 
 ## Contributing
 
@@ -11,60 +13,14 @@
 
 Feel free to report any issues or feature requests using Github issues.
 
-## Development setup
+### Development setup
 
 1. Install [pnpm](https://pnpm.js.org/en/installation)
 2. Run `pnpm install`
 3. Run `pnpm dev` to start the dev server
 4. Run `pnpm test` to run tests (in watch mode)
 
-# TODOs:
-
-- [x] format displayed code
-- [x] primitive types
-- [x] spread operator for tuples (eg. used for concat)
-- [ ] infer
-  - [x] tuples
-  - [x] objects
-  - [ ] functions
-- [x] object types
-- [x] union types
-- [x] mapped types
-- [x] distributed union
-- [x] indexed access types
-- [x] keyof
-- [ ] template string literals
-- [ ] intersection types
-- [ ] function types
-- [ ] type variance
-- [ ] readonly
-- [ ] optional properties
-- [ ] built-in types
-  - [x] Uppercase
-  - [x] Lowercase
-  - [x] Capitalize
-  - [x] Uncapitalize
-  - [x] Extract,
-  - [x] Exclude
-  - [x] Pick,
-  - [x] Omit
-  - [ ] Partial, Required (needs optional properties)
-  - [ ] Readonly (needs readonly)
-  - [ ] NonNullable (needs intersection and `{}` type)
-  - [ ] Record
-  - [ ] Awaited, Promise, PromiseLike
-  - [ ] Parameters, ReturnType (needs function types)
-- [ ] extends
-  - [x] any, unknown, never
-  - [x] common sets such as number, string
-  - [x] literal types
-  - [x] objects
-  - [x] union types
-  - [ ] intersection types
-  - [ ] function types
-- [x] conditional types
-
-# Implementing new features:
+### Implementing new features:
 
 - Make sure `mapASTToTypeNodes` handles parsing syntax for this feature, if not, add it. This
   requires adding a new `TypeNode` variant. Fill missing cases in functions that use `TypeNode` (use
@@ -75,17 +31,6 @@ Feel free to report any issues or feature requests using Github issues.
 - In `eval-tree.ts` add new cases in `calculateNextStep` and `chooseNodeToEval`.
 - Finally, update `EvalDescription` component.
 
-## Implementing built-in types
+### Implementing built-in types
 
 To add a missing built-in type (e.g. `Pick`) you just need to implement it in the `global-types.ts` files according to `GlobalTypeFn` type.
-
-## Other todos:
-
-- [x] star on github widget
-- [x] UI revamp
-- [x] Better examples
-- [x] step through controls instead of showing all at once
-- [x] report a bug button (link to gh issue template)
-- [ ] toasts informing of errors instead of console logging
-- [ ] fix how objects are displayed
-- [ ] landing page / how to use section

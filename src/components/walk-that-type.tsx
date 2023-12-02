@@ -14,7 +14,7 @@ export const WalkThatType = ({ trace }: WalkThatTypeProps) => {
   const [initialType, ...steps] = trace;
 
   return (
-    <Stack>
+    <Stack w="full" align="center">
       <CodeBlock code={printTypeNode(initialType)} />
       <WalkThatTypeNextStep steps={steps} />
     </Stack>
@@ -37,7 +37,7 @@ const WalkThatTypeNextStep = ({ steps }: { steps: EvalStep[] }) => {
 
   return (
     <>
-      <Stack>
+      <Stack w="full">
         <EvalDescription
           desc={currentStep.evalDescription}
           {...(state === "step-over"
@@ -75,6 +75,7 @@ const WalkThatTypeNextStep = ({ steps }: { steps: EvalStep[] }) => {
           (evalDescription) => (
             <>
               <Stack
+                w="full"
                 p={6}
                 pb={12}
                 borderStyle="solid"
