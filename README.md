@@ -2,6 +2,8 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/a9f2c2f3-0a4c-4429-949f-beb6225c7171/deploy-status)](https://app.netlify.com/sites/walk-that-type/deploys)
 
+![preview](public/preview.png)
+
 Debugging complex TypeScript types is painful, because you can't simply put log statements in them and the obscure syntax doesn't help. Introducing Walk That Type: a tool that lets you paste or write any type, then step through it while explaining what happens at each step!
 
 > 🚧 Warning: this project is still in early development stage. It might include bugs and missing features (see [ROADMAP](https://github.com/softwaremill/walk-that-type/issues/6) to see what's still coming).
